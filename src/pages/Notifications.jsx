@@ -31,7 +31,7 @@ export default function Notifications() {
   }
 
   return (
-    <div style={{ padding: '22px 26px 40px', display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16, alignItems: 'start', animation: 'df-fade .25s' }}>
+    <div className="df-grid-main" style={{ padding: '22px 26px 40px', animation: 'df-fade .25s' }}>
       <Card title={T('notifications')} extra={
         <button onClick={markAllNotifsRead} style={{ ...btnGhostStyle(), fontSize: 12 }}>Mark all read</button>
       }>

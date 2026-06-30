@@ -32,7 +32,7 @@ export default function Vehicles() {
           <Icon name="plus" size={16} sw={2.2} /> Add vehicle
         </button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
+      <div className="df-grid-2">
         {data.vehicles.map(v => {
           const sm = statusMap[v.status];
           return (

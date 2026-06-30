@@ -4,9 +4,11 @@ import { Icon, Pill, Avatar, ProgressBar, EmptyRow, Card, KV, btnGhostStyle, eur
 import { C, font } from '../data/seed.js';
 
 function StudentList() {
-  const { data, search, payFilter, setPayFilter, openStudent, openModal, T } = useApp();
+  const { data, role, me, search, payFilter, setPayFilter, openStudent, openModal, T } = useApp();
+  const isInstructor = role === 'instructor';
   const q = search.toLowerCase();
   let list = data.students.filter(s => !q || s.name.toLowerCase().includes(q));
+  if (isInstructor) list = list.filter(s => s.instructorId === me.id);
   if (payFilter !== 'all') list = list.filter(s => s.payment === payFilter);
 
   const cols = '2.2fr 1.4fr 1.6fr 1fr 1fr 40px';
@@ -20,11 +22,15 @@ function StudentList() {
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 13, color: C.mut, fontWeight: 600 }}>{list.length} {T('students').toLowerCase()}</div>
-        <button onClick={() => openModal({ type: 'student' })} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
-          <Icon name="plus" size={16} sw={2.2} />{T('add_student')}
-        </button>
+        {!isInstructor && (
+          <button onClick={() => openModal({ type: 'student' })} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
+            <Icon name="plus" size={16} sw={2.2} />{T('add_student')}
+          </button>
+        )}
       </div>
       <div style={{ margin: '0 26px 30px', background: C.surf, border: '1px solid ' + C.line, borderRadius: 14, overflow: 'hidden' }}>
+       <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: 720 }}>
         <div style={{ display: 'grid', gridTemplateColumns: cols, gap: 12, padding: '11px 22px', borderBottom: '1px solid ' + C.line, fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase', letterSpacing: '.05em' }}>
           <div>{T('name')}</div><div>{T('instructor')}</div><div>{T('package')}</div><div>{T('readiness')}</div><div>{T('payment')}</div><div />
         </div>
@@ -60,6 +66,8 @@ function StudentList() {
             </button>
           );
         }) : <EmptyRow msg="No students found" />}
+        </div>
+       </div>
       </div>
     </div>
   );
@@ -77,7 +85,7 @@ function ProfOverview({ s, i, v }) {
   const { T } = useApp();
   const ringPct = Math.round(s.used / s.total * 100);
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
+    <div className="df-grid-main">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Card title={T('package')}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -96,7 +104,7 @@ function ProfOverview({ s, i, v }) {
           </div>
         </Card>
         <Card>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+          <div className="df-grid-2" style={{ gap: 0 }}>
             {[[T('instructor'), i.name, i.color], [T('vehicle'), v ? v.name : '—', C.teal], ['Category', 'B — Car', C.vio], ['Joined', new Date(s.joined).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }), C.amb]].map((r, idx) => (
               <div key={idx} style={{ padding: '14px 16px', borderBottom: idx < 2 ? '1px solid ' + C.line2 : 'none', borderRight: idx % 2 === 0 ? '1px solid ' + C.line2 : 'none' }}>
                 <div style={{ fontSize: 11.5, color: C.mut, fontWeight: 600 }}>{r[0]}</div>
@@ -145,7 +153,7 @@ function ProfProgress({ s }) {
   const labels = { parking: T('skill_parking'), reverse: T('skill_reverse'), highway: T('skill_highway'), clutch: T('skill_clutch'), roundabout: T('skill_roundabout'), lane: T('skill_lane') };
   const avg = (Object.values(s.progress).reduce((a, b) => a + b, 0) / 6).toFixed(1);
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16, alignItems: 'start' }}>
+    <div className="df-grid-main">
       <Card title={T('progress') + ' — skill scoring (1–5)'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           {data.skills.map(sk => {
@@ -190,7 +198,7 @@ function ProfPayments({ s }) {
   const { data, T, openModal } = useApp();
   const hist = data.payments.filter(p => p.studentId === s.id);
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+    <div className="df-grid-3" style={{ gap: 14 }}>
       <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 14 }}>
         {[[T('total_due'), euro(s.price), C.ink], [T('paid'), euro(s.paid), C.grn], [T('remaining'), euro(s.due), s.due > 0 ? C.red : C.grn]].map((r, idx) => (
           <div key={idx} style={{ flex: 1, background: C.surf, border: '1px solid ' + C.line, borderRadius: 13, padding: '16px 18px' }}>
@@ -245,7 +253,7 @@ function ProfDocs({ s }) {
   const docs = [['ID card', 'id_card.pdf'], ['Medical certificate', 'medical_cert.pdf'], ['Application form', 'application.pdf'], ['Photo', 'photo.jpg']];
   return (
     <Card title="Documents">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="df-grid-2" style={{ gap: 12 }}>
         {docs.map(([name, file], idx) => (
           <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '1px solid ' + C.line, borderRadius: 11 }}>
             <div style={{ width: 38, height: 38, borderRadius: 9, background: C.priBg, color: C.pri, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="doc" size={19} sw={1.8} /></div>

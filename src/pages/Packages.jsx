@@ -21,7 +21,7 @@ export default function Packages() {
           <Icon name="plus" size={16} sw={2.2} /> Custom package
         </button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+      <div className="df-grid-3">
         {pkgs.map(p => (
           <div key={p.n} style={{ background: p.pop ? C.side : C.surf, border: '1px solid ' + (p.pop ? C.sideLine : C.line), borderRadius: 16, padding: '24px 22px', position: 'relative', color: p.pop ? '#fff' : C.ink }}>
             {p.pop && <div style={{ position: 'absolute', top: 16, right: 16, background: C.pri, color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 7 }}>Popular</div>}

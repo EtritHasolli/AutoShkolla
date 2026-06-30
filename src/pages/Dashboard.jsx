@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Icon, Pill, Avatar, EmptyRow, btnGhostStyle, euro, statusColor, statusBg, payColor, payBg } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
+import { useIsMobile } from '../hooks/useMediaQuery.js';
 
 function Metric({ label, val, sub, icon, color, bg }) {
   return (
@@ -32,6 +33,7 @@ function Card({ title, extra, children }) {
 
 export default function Dashboard() {
   const { lessons, data, todayIdx, T, go, openModal, openStudent, showToast } = useApp();
+  const isMobile = useIsMobile();
   const todays = lessons.filter(l => l.day === todayIdx).sort((a, b) => a.hour - b.hour);
   const doneToday = todays.filter(l => l.status === 'completed').length;
   const overdueStudents = data.students.filter(s => s.payment !== 'paid');
@@ -49,7 +51,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ padding: '24px 26px 40px', animation: 'df-fade .25s' }}>
+    <div style={{ padding: isMobile ? '18px 16px 32px' : '24px 26px 40px', animation: 'df-fade .25s' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ fontFamily: font.disp, fontSize: 24, fontWeight: 700, color: C.ink, letterSpacing: '-.02em' }}>{T('good_morning')}, Astrit</div>
@@ -72,7 +74,7 @@ export default function Dashboard() {
         <Metric label={T('overdue')} val={euro(outstanding)} sub={overdueStudents.length + ' ' + T('students').toLowerCase()} icon="alert" color={C.red} bg={C.redBg} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr', gap: 16, alignItems: 'start' }}>
         <Card title={T('today_lessons')} extra={link(T('view_all'), () => go('calendar'))}>
           {todays.length ? todays.map(l => {
             const s = data.students.find(x => x.id === l.studentId);

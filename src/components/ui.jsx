@@ -37,6 +37,12 @@ export function Icon({ name, size = 18, sw = 1.8 }) {
     bell: [<path key={1} d="M18.5 16.5H5.5l1.3-2.2v-3.6a5.2 5.2 0 0 1 10.4 0v3.6z" />, <path key={2} d="M10 19.5a2 2 0 0 0 4 0" />],
     doc: [<path key={1} d="M7 3h7l4 4v14H7z" />, <path key={2} d="M14 3v4h4" />, <path key={3} d="M9.5 13h5" />, <path key={4} d="M9.5 16h5" />],
     star: [<path key={1} d="M12 4l2.3 4.8 5.2.7-3.8 3.6.9 5.1L12 16.6 7.2 18.2l.9-5.1L4.3 9.5l5.2-.7z" />],
+    courses: [<path key={1} d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5z" />, <path key={2} d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 1 1.5 1.5z" />],
+    image: [<rect key={1} x={3} y={4} width={18} height={16} rx={2.2} />, <circle key={2} cx={8.5} cy={9} r={1.6} />, <path key={3} d="M21 16l-5-5-7 7" />],
+    trash: [<path key={1} d="M4 7h16" />, <path key={2} d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />, <path key={3} d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />],
+    edit: [<path key={1} d="M4 20h4L18.5 9.5a2 2 0 0 0-2.8-2.8L5 17.2z" />, <path key={2} d="M14 7l3 3" />],
+    eye: [<path key={1} d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />, <circle key={2} cx={12} cy={12} r={3} />],
+    eyeOff: [<path key={1} d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a18 18 0 0 1-2.4 3.2" />, <path key={2} d="M6.2 6.2A18 18 0 0 0 2 12s3.5 7 10 7a10.6 10.6 0 0 0 4.1-.8" />, <path key={3} d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />, <path key={4} d="M3 3l18 18" />],
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"

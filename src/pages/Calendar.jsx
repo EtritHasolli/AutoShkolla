@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Icon, Pill, iconBtnStyle, statusColor, statusBg } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
+import { useIsMobile } from '../hooks/useMediaQuery.js';
 
 function LessonChip({ lesson, big, onDragStart, onDragEnd, onClick }) {
   const { data } = useApp();
@@ -31,7 +32,12 @@ function LessonChip({ lesson, big, onDragStart, onDragEnd, onClick }) {
 }
 
 export default function Calendar() {
-  const { lessons, calView, setCalView, calDay, setCalDay, calFilterI, setCalFilterI, calFilterV, setCalFilterV, days, todayIdx, hours, dragId, setDragId, moveLesson, openModal, data, T } = useApp();
+  const { lessons: allLessons, role, me, calView, setCalView, calDay, setCalDay, calFilterI, setCalFilterI, calFilterV, setCalFilterV, days, todayIdx, hours, dragId, setDragId, moveLesson, openModal, data, T } = useApp();
+  const isMobile = useIsMobile();
+  // Instructors only see their own lessons.
+  const lessons = role === 'instructor' ? allLessons.filter(l => l.instructorId === me.id) : allLessons;
+  // Week view doesn't fit on phones — force day view there.
+  const effView = isMobile ? 'day' : calView;
 
   function fmtDate(dt) { return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); }
   function fmtDay(i) { return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]; }
@@ -48,19 +54,21 @@ export default function Calendar() {
     );
   }
 
-  const displayDays = calView === 'day' ? [calDay] : [0, 1, 2, 3, 4, 5];
-  const colW = calView === 'day' ? '1fr' : `repeat(${displayDays.length},1fr)`;
+  const displayDays = effView === 'day' ? [calDay] : [0, 1, 2, 3, 4, 5];
+  const colW = effView === 'day' ? '1fr' : `repeat(${displayDays.length},1fr)`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '18px 26px', borderBottom: '1px solid ' + C.line, background: C.surf, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', background: C.bg, border: '1px solid ' + C.line, borderRadius: 9, padding: 3 }}>
-          {[['week', T('week')], ['day', T('day')]].map(([v, l]) => (
-            <button key={v} onClick={() => setCalView(v)} style={{ border: 'none', background: calView === v ? C.surf : 'transparent', color: calView === v ? C.ink : C.mut, boxShadow: calView === v ? '0 1px 3px rgba(0,0,0,.1)' : 'none', fontSize: 13, fontWeight: 600, padding: '6px 16px', borderRadius: 7 }}>{l}</button>
-          ))}
-        </div>
-        {calView === 'day' ? (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: isMobile ? '14px 16px' : '18px 26px', borderBottom: '1px solid ' + C.line, background: C.surf, flexWrap: 'wrap' }}>
+        {!isMobile && (
+          <div style={{ display: 'flex', background: C.bg, border: '1px solid ' + C.line, borderRadius: 9, padding: 3 }}>
+            {[['week', T('week')], ['day', T('day')]].map(([v, l]) => (
+              <button key={v} onClick={() => setCalView(v)} style={{ border: 'none', background: calView === v ? C.surf : 'transparent', color: calView === v ? C.ink : C.mut, boxShadow: calView === v ? '0 1px 3px rgba(0,0,0,.1)' : 'none', fontSize: 13, fontWeight: 600, padding: '6px 16px', borderRadius: 7 }}>{l}</button>
+            ))}
+          </div>
+        )}
+        {effView === 'day' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <button onClick={() => setCalDay(d => Math.max(0, d - 1))} style={iconBtnStyle()}><Icon name="chevL" size={16} sw={2.2} /></button>
             <div style={{ fontFamily: font.disp, fontWeight: 600, fontSize: 15, color: C.ink, minWidth: 128, textAlign: 'center' }}>{fmtDate(days[calDay])}</div>
@@ -109,7 +117,7 @@ export default function Calendar() {
         </div>
 
         {hours.map(hr => (
-          <div key={hr} style={{ display: 'grid', gridTemplateColumns: '56px ' + colW, minHeight: calView === 'day' ? 64 : 58 }}>
+          <div key={hr} style={{ display: 'grid', gridTemplateColumns: '56px ' + colW, minHeight: effView === 'day' ? 64 : 58 }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: 8, paddingTop: 6, fontFamily: font.mono, fontSize: 11.5, color: C.soft, borderTop: '1px solid ' + C.line2 }}>
               {String(hr).padStart(2, '0')}:00
             </div>
@@ -122,7 +130,7 @@ export default function Calendar() {
                   onClick={() => { if (!ls.length) openModal({ type: 'lesson', day: d, hour: hr, studentId: data.students[0].id, instructorId: data.instructors[0].id, vehicleId: data.vehicles[0].id, ltype: 'city' }); }}
                   style={{ borderTop: '1px solid ' + C.line2, borderLeft: '1px solid ' + C.line2, padding: 3, position: 'relative', cursor: ls.length ? 'default' : 'pointer', background: d === todayIdx ? 'rgba(42,111,219,.022)' : 'transparent' }}>
                   {ls.map(l => (
-                    <LessonChip key={l.id} lesson={l} big={calView === 'day'}
+                    <LessonChip key={l.id} lesson={l} big={effView === 'day'}
                       onDragStart={() => setDragId(l.id)}
                       onDragEnd={() => setDragId(null)}
                       onClick={() => openModal({ type: 'lessonView', id: l.id })}

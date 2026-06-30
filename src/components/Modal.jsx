@@ -222,9 +222,9 @@ function AddStudentModal({ mobile }) {
 }
 
 export default function Modal() {
-  const { modal, device } = useApp();
+  const { modal } = useApp();
   if (!modal) return null;
-  const mobile = device === 'mobile';
+  const mobile = window.innerWidth < 640;
   if (modal.type === 'lessonView') return <LessonViewModal mobile={mobile} />;
   if (modal.type === 'lesson') return <NewLessonModal mobile={mobile} />;
   if (modal.type === 'payment') return <PaymentModal mobile={mobile} />;

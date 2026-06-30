@@ -13,7 +13,7 @@ export default function Instructors() {
           <Icon name="plus" size={16} sw={2.2} /> Add instructor
         </button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
+      <div className="df-grid-2">
         {data.instructors.map(i => {
           const v = data.vehicles.find(x => x.id === i.vehicle);
           const todays = lessons.filter(l => l.instructorId === i.id && l.day === todayIdx);

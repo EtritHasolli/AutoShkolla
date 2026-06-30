@@ -19,3 +19,63 @@ input, select, textarea { font-family: inherit; }
 @keyframes df-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes df-sheet { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes df-pop { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes df-drawer { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+/* ---------- Hover & interaction polish ---------- */
+
+/* Every enabled button gets a gentle responsive feel */
+button { transition: filter .14s ease, transform .12s ease, background .14s ease, border-color .14s ease, box-shadow .14s ease, opacity .14s ease; }
+button:not(:disabled):hover { filter: brightness(.97); }
+button:not(:disabled):active { transform: scale(.97); }
+button:disabled { cursor: not-allowed; }
+
+/* Inputs / textareas focus ring */
+input, select, textarea { transition: border-color .14s ease, box-shadow .14s ease, background .14s ease; }
+input:focus, select:focus, textarea:focus {
+  border-color: #2a6fdb !important;
+  box-shadow: 0 0 0 3px rgba(42,111,219,.14);
+  background: #fff !important;
+}
+
+/* Circular quiz navigator buttons — lift on hover */
+.df-circle:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px -6px rgba(20,30,50,.35);
+  filter: none;
+}
+
+/* Card that should react to hover (course cards, school rows-as-cards, etc.) */
+.df-card-hover { transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.df-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -16px rgba(20,30,50,.32);
+  border-color: #d4dbe6 !important;
+}
+
+/* Selectable option / list rows — soft background shift */
+.df-option:not(:disabled):hover { filter: none; border-color: #b9c4d6 !important; }
+
+/* Ghost / icon buttons — tint background on hover instead of dimming */
+.df-ghost:not(:disabled):hover { filter: none; background: #eef1f6 !important; }
+
+/* Links / text buttons */
+.df-link:hover { filter: none; text-decoration: underline; }
+
+/* ---------- Responsive grid helpers ---------- */
+/* Two-column main/aside layout → single column on mobile */
+.df-grid-main { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; align-items: start; }
+.df-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.df-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.df-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.df-grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+@media (max-width: 1000px) {
+  .df-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 860px) {
+  .df-grid-main { grid-template-columns: 1fr; }
+  .df-grid-3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .df-grid-2, .df-grid-4 { grid-template-columns: 1fr; }
+}

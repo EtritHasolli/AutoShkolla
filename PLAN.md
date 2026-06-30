@@ -10,9 +10,15 @@
 - ✅ i18n EN/SQ (toggle in Settings)
 - ✅ Toast notifications
 
+- ✅ Login screen wired (role selector → desktop/mobile shell)
+- ✅ AppContext: `isLoggedIn`, `user`, `login()`, `logout()`
+- ✅ App gates on `isLoggedIn`; picks desktop vs mobile shell by `user.device`
+- ✅ Sidebar nav filtered by role; logout returns to login screen
+- ✅ Mobile profile logout buttons wired to `logout()`
+
 ---
 
-## Next: Login screen + role-based access
+## Done: Login screen + role-based access
 
 ### Login screen
 - Centered card on a dark gradient background

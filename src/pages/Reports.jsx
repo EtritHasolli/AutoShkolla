@@ -47,7 +47,7 @@ export default function Reports() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
+      <div className="df-grid-main">
         <Card title={T('monthly_revenue')}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, height: 200, padding: '10px 4px 0' }}>
             {months.map(([m, val]) => (
