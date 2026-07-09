@@ -4,12 +4,12 @@ import { Icon } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
 
 export default function Instructors() {
-  const { data, lessons, todayIdx, showToast, T } = useApp();
+  const { data, lessons, todayIdx, showToast, openModal, T } = useApp();
   return (
     <div style={{ padding: '22px 26px 40px', animation: 'df-fade .25s' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ flex: 1 }} />
-        <button onClick={() => showToast('Add instructor (demo)')} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
+        <button onClick={() => openModal({ type: 'instructor' })} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
           <Icon name="plus" size={16} sw={2.2} /> Add instructor
         </button>
       </div>

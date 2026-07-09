@@ -2,23 +2,36 @@ import React, { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Icon } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
+import { supabase } from '../lib/supabase.js';
 
 export default function Login() {
-  const { authenticate, setAuthScreen, showToast } = useApp();
+  const { authenticate, setAuthScreen, showToast, isLive } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
-  function handleSignIn() {
+  async function handleSignIn() {
     setError('');
+    setUnconfirmed(false);
     if (!email || !password) {
       setError('Please enter your email and password.');
       return;
     }
-    if (!authenticate(email, password)) {
-      setError('Invalid email or password.');
+    setBusy(true);
+    const res = await authenticate(email.trim(), password);
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.error || 'Invalid email or password.');
+      setUnconfirmed(!!res.unconfirmed);
     }
+  }
+
+  async function resendConfirmation() {
+    const { error: err } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
+    showToast(err ? err.message : 'Confirmation email re-sent to ' + email.trim());
   }
 
   function handleKey(e) {
@@ -59,7 +72,12 @@ export default function Login() {
         <div style={{ marginBottom: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2 }}>Password</div>
-            <button className="df-link" onClick={() => showToast('Password reset link sent (demo)')} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 600, fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: font.body }}>
+            <button className="df-link" onClick={async () => {
+              if (!isLive) { showToast('Password reset link sent (demo)'); return; }
+              if (!email.trim()) { setError('Enter your email first, then tap "Forgot password?".'); return; }
+              const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim());
+              showToast(err ? err.message : 'Password reset link sent to ' + email.trim());
+            }} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 600, fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: font.body }}>
               Forgot password?
             </button>
           </div>
@@ -76,25 +94,38 @@ export default function Login() {
         </div>
 
         {error && (
-          <div style={{ fontSize: 12.5, color: C.red, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="alert" size={14} sw={2} /> {error}
+          <div style={{ fontSize: 12.5, color: C.red, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon name="alert" size={14} sw={2} /> {error}
+            </div>
+            {unconfirmed && (
+              <button onClick={resendConfirmation} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 700, fontSize: 12.5, cursor: 'pointer', padding: 0, marginTop: 6, fontFamily: font.body }}>
+                Resend confirmation email
+              </button>
+            )}
           </div>
         )}
 
         <div style={{ height: error ? 0 : 16 }} />
 
-        <button onClick={handleSignIn} style={{
-          width: '100%', border: 'none', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)',
-          color: '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12,
-          cursor: 'pointer', boxShadow: '0 10px 24px -8px rgba(42,111,219,.55)', fontFamily: font.body,
+        <button onClick={handleSignIn} disabled={busy} style={{
+          width: '100%', border: 'none', background: busy ? C.line : 'linear-gradient(135deg,#2a6fdb,#6557d1)',
+          color: busy ? C.mut : '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12,
+          cursor: busy ? 'wait' : 'pointer', boxShadow: busy ? 'none' : '0 10px 24px -8px rgba(42,111,219,.55)', fontFamily: font.body,
         }}>
-          Sign in
+          {busy ? 'Signing in…' : 'Sign in'}
         </button>
 
         <div style={{ textAlign: 'center', fontSize: 13, color: C.mut, marginTop: 20 }}>
           Don't have an account?{' '}
           <button className="df-link" onClick={() => setAuthScreen('signup')} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0, fontFamily: font.body }}>
             Register your school
+          </button>
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 13, color: C.mut, marginTop: 8 }}>
+          Student?{' '}
+          <button className="df-link" onClick={() => setAuthScreen('landing')} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0, fontFamily: font.body }}>
+            Browse schools & enroll
           </button>
         </div>
       </div>

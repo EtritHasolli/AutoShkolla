@@ -3,10 +3,10 @@ import { useApp } from '../AppContext.jsx';
 import { Icon, Pill } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
 
-function daysTo(date) { return Math.round((new Date(date) - new Date('2026-06-29')) / 86400000); }
+function daysTo(date) { return Math.round((new Date(date) - Date.now()) / 86400000); }
 
 export default function Vehicles() {
-  const { data, showToast, T } = useApp();
+  const { data, openModal, T } = useApp();
   const statusMap = {
     available: [C.grn, C.grnBg, T('available')],
     in_use: [C.pri, C.priBg, T('in_use')],
@@ -14,6 +14,14 @@ export default function Vehicles() {
   };
 
   function Expiry({ label, date }) {
+    if (!date) {
+      return (
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11.5, color: C.mut, fontWeight: 600 }}>{label}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: C.soft, marginTop: 2 }}>—</div>
+        </div>
+      );
+    }
     const d = daysTo(date);
     return (
       <div style={{ flex: 1 }}>
@@ -28,7 +36,7 @@ export default function Vehicles() {
     <div style={{ padding: '22px 26px 40px', animation: 'df-fade .25s' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ flex: 1 }} />
-        <button onClick={() => showToast('Add vehicle (demo)')} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
+        <button onClick={() => openModal({ type: 'vehicle' })} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
           <Icon name="plus" size={16} sw={2.2} /> Add vehicle
         </button>
       </div>

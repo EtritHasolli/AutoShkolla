@@ -6,6 +6,7 @@ import Modal from './components/Modal.jsx';
 import Toast from './components/Toast.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
+import Landing from './pages/Landing.jsx';
 import SuperAdmin from './pages/SuperAdmin.jsx';
 import { useIsMobile } from './hooks/useMediaQuery.js';
 
@@ -81,7 +82,9 @@ function AppInner() {
 function Shell() {
   const { isLoggedIn, portal, authScreen } = useApp();
   if (!isLoggedIn) {
-    return authScreen === 'signup' ? <Signup /> : <Login />;
+    if (authScreen === 'signup') return <Signup />;
+    if (authScreen === 'login') return <Login />;
+    return <Landing />;
   }
   if (portal === 'superadmin') return <SuperAdmin />;
   return <AppInner />;

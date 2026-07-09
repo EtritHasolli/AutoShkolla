@@ -49,7 +49,7 @@ export default function Topbar() {
       </button>
 
       {canSchedule && (
-        <button onClick={() => openModal({ type: 'lesson', day: 0, hour: 9, studentId: 's1', instructorId: 'i1', vehicleId: 'v1', ltype: 'city' })}
+        <button onClick={() => openModal({ type: 'lesson', day: 0, hour: 9, studentId: data.students[0]?.id, instructorId: data.instructors[0]?.id, vehicleId: data.vehicles[0]?.id, ltype: 'city' })}
           style={{ display: 'flex', alignItems: 'center', gap: 8, border: 'none', background: C.pri, color: '#fff', fontSize: 13.5, fontWeight: 600, padding: isMobile ? '10px 12px' : '10px 16px', borderRadius: 10, boxShadow: '0 8px 18px -8px ' + C.pri, flexShrink: 0, cursor: 'pointer' }}>
           <Icon name="plus" size={17} sw={2.2} />
           {!isMobile && T('schedule_lesson')}

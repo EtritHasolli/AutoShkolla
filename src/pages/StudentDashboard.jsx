@@ -20,6 +20,7 @@ function NextLessonHero({ lesson }) {
   const { data, openModal, showToast, T } = useApp();
   const i = data.instructors.find(x => x.id === lesson.instructorId);
   const v = data.vehicles.find(x => x.id === lesson.vehicleId);
+  if (!i) return null;
   const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][lesson.day];
   return (
     <div style={{ background: 'linear-gradient(140deg,#2a6fdb,#3858c8 60%,#6557d1)', borderRadius: 18, padding: '22px 24px', color: '#fff', boxShadow: '0 18px 40px -18px rgba(42,111,219,.6)' }}>
@@ -29,7 +30,7 @@ function NextLessonHero({ lesson }) {
       </div>
       <div style={{ fontFamily: font.disp, fontSize: 26, fontWeight: 700, letterSpacing: '-.02em' }}>{i.name}</div>
       <div style={{ display: 'flex', gap: 18, marginTop: 10, fontSize: 13.5, color: '#dbe6fb', flexWrap: 'wrap' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="car2" size={16} sw={1.9} />{v.name} · {v.plate}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="car2" size={16} sw={1.9} />{v ? v.name + ' · ' + v.plate : '—'}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={15} sw={1.9} />{lesson.pickup}</span>
       </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
@@ -107,17 +108,21 @@ export default function StudentDashboard() {
 
         <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 16, padding: '20px' }}>
           <div style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 14 }}>{T('instructor')}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-            <div style={{ width: 46, height: 46, borderRadius: '50%', background: i.color + '1f', color: i.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontFamily: font.disp, fontSize: 16 }}>
-              {i.name.split(' ').map(w => w[0]).join('')}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{i.name}</div>
-              <div style={{ fontSize: 12.5, color: C.mut, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                <Icon name="star" size={13} sw={2} /> {i.rating} · Cat. {i.cat}
+          {i ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+              <div style={{ width: 46, height: 46, borderRadius: '50%', background: i.color + '1f', color: i.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontFamily: font.disp, fontSize: 16 }}>
+                {i.name.split(' ').map(w => w[0]).join('')}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{i.name}</div>
+                <div style={{ fontSize: 12.5, color: C.mut, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                  <Icon name="star" size={13} sw={2} /> {i.rating} · Cat. {i.cat}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ fontSize: 13, color: C.mut }}>Your school will assign you an instructor soon.</div>
+          )}
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Icon } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
+import { KOSOVO_CITIES } from '../data/cities.js';
 
 const CATS = ['A', 'A1', 'A2', 'AM', 'B', 'B1', 'BE', 'C', 'C1', 'CE', 'D', 'D1'];
 
@@ -93,8 +94,10 @@ function NavRow({ step, onBack, onNext, nextLabel = 'Continue', disabled = false
 }
 
 export default function Signup() {
-  const { completeOnboarding, setAuthScreen } = useApp();
+  const { registerSchool, setAuthScreen, showToast } = useApp();
   const [step, setStep] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const logoInputRef = useRef(null);
 
   // Step 0 — account
@@ -130,8 +133,21 @@ export default function Signup() {
     reader.readAsDataURL(file);
   }
 
-  function finish() {
-    completeOnboarding({ name: schoolName, bizNumber, address, city, phone, logo: logoPreview, cats }, { name, email });
+  async function finish() {
+    if (busy) return;
+    setError('');
+    setBusy(true);
+    const res = await registerSchool({
+      name, email: email.trim(), password,
+      school: { name: schoolName, bizNumber, address, city, phone, logo: logoPreview, cats },
+    });
+    setBusy(false);
+    if (!res.ok) { setError(res.error || 'Sign up failed. Please try again.'); return; }
+    if (res.confirm) {
+      showToast('Check your email to confirm your account, then sign in.');
+      setAuthScreen('login');
+    }
+    // otherwise the session is live and the app switches to the dashboard on its own
   }
 
   const passwordsMatch = password.length >= 6 && password === confirm;
@@ -184,7 +200,12 @@ export default function Signup() {
             <div style={{ fontFamily: font.disp, fontSize: 20, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Contact & location</div>
             <div style={{ fontSize: 13.5, color: C.mut, marginBottom: 22 }}>Where your students can find you</div>
             <Field label="Street address"><input value={address} onChange={e => setAddress(e.target.value)} placeholder="e.g. Rr. Nëna Terezë 12" style={inp} /></Field>
-            <Field label="City"><input value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Prishtinë" style={inp} /></Field>
+            <Field label="City">
+              <select value={city} onChange={e => setCity(e.target.value)} style={{ ...inp, appearance: 'none', cursor: 'pointer', fontWeight: city ? 600 : 400, color: city ? C.ink : C.mut }}>
+                <option value="">Select a city…</option>
+                {KOSOVO_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
             <Field label="Phone number"><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+383 44 000 000" style={inp} /></Field>
             <div style={{ height: 8 }} />
             <NavRow step={step} onBack={() => setStep(s => s - 1)} onNext={() => setStep(3)} disabled={!canStep2} />
@@ -228,8 +249,13 @@ export default function Signup() {
               </div>
             </Field>
 
+            {error && (
+              <div style={{ fontSize: 12.5, color: C.red, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="alert" size={14} sw={2} /> {error}
+              </div>
+            )}
             <div style={{ height: 8 }} />
-            <NavRow step={step} onBack={() => setStep(s => s - 1)} onNext={finish} nextLabel="Launch DriveFlow" disabled={!canStep3} />
+            <NavRow step={step} onBack={() => setStep(s => s - 1)} onNext={finish} nextLabel={busy ? 'Creating your school…' : 'Launch DriveFlow'} disabled={!canStep3 || busy} />
           </>
         )}
 

@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Icon } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
-import { platformSchools, platformTrend } from '../data/platform.js';
 
 /* ---------- helpers ---------- */
 function statusStyle(s) {
@@ -60,10 +59,11 @@ function Ring({ pct, color, size = 64 }) {
 
 /* ---------- Schools table (shared) ---------- */
 function SchoolsTable({ onOpen }) {
+  const { platform } = useApp();
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
 
-  const filtered = platformSchools.filter(s => {
+  const filtered = platform.schools.filter(s => {
     const m = s.name.toLowerCase().includes(search.toLowerCase()) || s.city.toLowerCase().includes(search.toLowerCase());
     const p = planFilter === 'all' || s.plan === planFilter;
     return m && p;
@@ -131,25 +131,27 @@ function SchoolsTable({ onOpen }) {
 
 /* ---------- Overview page ---------- */
 function Overview({ onOpen }) {
+  const { platform } = useApp();
+  const schools = platform.schools;
   const totals = useMemo(() => {
-    const active = platformSchools.filter(s => s.status === 'active');
+    const active = schools.filter(s => s.status === 'active');
     return {
-      schools: platformSchools.length,
+      schools: schools.length,
       activeSchools: active.length,
-      students: platformSchools.reduce((a, s) => a + s.students, 0),
-      instructors: platformSchools.reduce((a, s) => a + s.instructors, 0),
-      vehicles: platformSchools.reduce((a, s) => a + s.vehicles, 0),
-      lessons: platformSchools.reduce((a, s) => a + s.lessonsThisMonth, 0),
-      mrr: platformSchools.reduce((a, s) => a + s.mrr, 0),
-      avgPass: Math.round(platformSchools.reduce((a, s) => a + s.examPassRate, 0) / platformSchools.length),
+      students: schools.reduce((a, s) => a + s.students, 0),
+      instructors: schools.reduce((a, s) => a + s.instructors, 0),
+      vehicles: schools.reduce((a, s) => a + s.vehicles, 0),
+      lessons: schools.reduce((a, s) => a + s.lessonsThisMonth, 0),
+      mrr: schools.reduce((a, s) => a + s.mrr, 0),
+      avgPass: Math.round(schools.reduce((a, s) => a + s.examPassRate, 0) / (schools.length || 1)),
     };
-  }, []);
+  }, [schools]);
 
   const planCounts = useMemo(() => {
     const c = { Pro: 0, Starter: 0 };
-    platformSchools.forEach(s => { c[s.plan] = (c[s.plan] || 0) + 1; });
+    schools.forEach(s => { c[s.plan] = (c[s.plan] || 0) + 1; });
     return c;
-  }, []);
+  }, [schools]);
 
   return (
     <>
@@ -175,13 +177,13 @@ function Overview({ onOpen }) {
         <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, padding: '20px 24px' }}>
           <div style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Growth</div>
           <div style={{ fontSize: 12.5, color: C.mut, marginBottom: 18 }}>Schools onboarded over time</div>
-          <MiniBars data={platformTrend} accessor={d => d.schools} color={C.pri} />
+          <MiniBars data={platform.trend} accessor={d => d.schools} color={C.pri} />
         </div>
         <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, padding: '20px 24px' }}>
           <div style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 18 }}>Plan breakdown</div>
           {[['Pro', C.pri], ['Starter', C.amb]].map(([plan, col]) => {
             const count = planCounts[plan] || 0;
-            const pct = Math.round(count / totals.schools * 100);
+            const pct = Math.round(count / (totals.schools || 1) * 100);
             return (
               <div key={plan} style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
@@ -205,7 +207,8 @@ function Overview({ onOpen }) {
 
 /* ---------- School detail page ---------- */
 function SchoolDetail({ id, onBack }) {
-  const s = platformSchools.find(x => x.id === id);
+  const { platform } = useApp();
+  const s = platform.schools.find(x => x.id === id);
   if (!s) return null;
   const st = statusStyle(s.status);
 
@@ -294,7 +297,7 @@ const NAV = [
 ];
 
 export default function SuperAdmin() {
-  const { logout } = useApp();
+  const { logout, user } = useApp();
   const [nav, setNav] = useState('overview');
   const [openId, setOpenId] = useState(null);
 
@@ -333,10 +336,10 @@ export default function SuperAdmin() {
 
         <div style={{ borderTop: '1px solid ' + C.sideLine, paddingTop: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '6px 8px 10px' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, fontFamily: font.disp }}>EH</div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, fontFamily: font.disp }}>{(user?.name || 'PA').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: '#fff', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Platform admin</div>
-              <div style={{ color: C.sideMut, fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>you@example.com</div>
+              <div style={{ color: C.sideMut, fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || 'platform admin'}</div>
             </div>
           </div>
           <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', color: C.sideMut, padding: '9px 13px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font.body }}>

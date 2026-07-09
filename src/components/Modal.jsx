@@ -54,6 +54,7 @@ function LessonViewModal({ mobile }) {
   const s = data.students.find(x => x.id === l.studentId);
   const i = data.instructors.find(x => x.id === l.instructorId);
   const v = data.vehicles.find(x => x.id === l.vehicleId);
+  if (!s || !i) return null;
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
@@ -68,7 +69,7 @@ function LessonViewModal({ mobile }) {
         <span style={{ fontFamily: font.mono, fontSize: 13, color: C.ink2, fontWeight: 600 }}>{days[l.day]} · {String(l.hour).padStart(2, '0')}:00</span>
       </div>
       <KV label={T('instructor')} value={i.name} />
-      <KV label={T('vehicle')} value={`${v.name} (${v.plate})`} />
+      <KV label={T('vehicle')} value={v ? `${v.name} (${v.plate})` : '—'} />
       <KV label={T('pickup')} value={l.pickup} />
       <KV label="Type" value={T(l.type)} />
       <div style={{ marginTop: 14, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -126,17 +127,34 @@ function NewLessonModal({ mobile }) {
   );
 }
 
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 function PaymentModal({ mobile }) {
-  const { modal, setModal, data, closeModal, showToast, T } = useApp();
+  const { modal, data, closeModal, recordPayment, T } = useApp();
   const m = modal;
+  const [studentId, setStudentId] = useState(m.studentId || data.students[0]?.id || '');
   const [method, setMethod] = useState(m.method || 'cash');
-  const s = m.studentId ? data.students.find(x => x.id === m.studentId) : null;
+  const [date, setDate] = useState(todayISO());
+  const [note, setNote] = useState('');
+  const s = data.students.find(x => x.id === studentId);
+  const [amount, setAmount] = useState(s ? s.due || 100 : 100);
+
+  if (!data.students.length) {
+    return (
+      <ModalShell title={T('record_payment')} mobile={mobile} footer={<button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>}>
+        <div style={{ fontSize: 13.5, color: C.mut }}>Add a student first — payments are recorded against a student.</div>
+      </ModalShell>
+    );
+  }
 
   return (
     <ModalShell title={T('record_payment')} mobile={mobile} footer={
       <>
         <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
-        <button onClick={() => { closeModal(); showToast(T('record_payment') + ' ✓'); }} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('record')}</button>
+        <button onClick={() => recordPayment({ studentId, amount, date, method, note })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('record')}</button>
       </>
     }>
       <div style={{ background: C.priSoft, border: '1px solid ' + C.priBg, borderRadius: 10, padding: '9px 12px', fontSize: 12, color: C.priD, fontWeight: 600, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -144,7 +162,7 @@ function PaymentModal({ mobile }) {
       </div>
       <ModalField label={T('student')}>
         <div style={{ position: 'relative' }}>
-          <select defaultValue={m.studentId || data.students[0].id} onChange={e => setModal(prev => ({ ...prev, studentId: e.target.value }))} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
+          <select value={studentId} onChange={e => { setStudentId(e.target.value); const st = data.students.find(x => x.id === e.target.value); if (st) setAmount(st.due || 100); }} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
             {data.students.map(st => <option key={st.id} value={st.id}>{st.name} — {T('remaining')} {euro(st.due)}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 11, top: 12, color: C.mut, pointerEvents: 'none' }}><Icon name="chevR" size={14} sw={2.2} /></span>
@@ -153,12 +171,12 @@ function PaymentModal({ mobile }) {
       <div style={{ display: 'flex', gap: 12 }}>
         <div style={{ flex: 1 }}>
           <ModalField label={T('amount')}>
-            <input type="number" defaultValue={s ? s.due : 100} style={inputStyle()} />
+            <input type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)} style={inputStyle()} />
           </ModalField>
         </div>
         <div style={{ flex: 1 }}>
           <ModalField label={T('date')}>
-            <input type="date" defaultValue="2026-06-29" style={inputStyle()} />
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle()} />
           </ModalField>
         </div>
       </div>
@@ -170,31 +188,41 @@ function PaymentModal({ mobile }) {
         </div>
       </ModalField>
       <ModalField label={T('note')}>
-        <input placeholder="…" style={inputStyle()} />
+        <input placeholder="…" value={note} onChange={e => setNote(e.target.value)} style={inputStyle()} />
       </ModalField>
     </ModalShell>
   );
 }
 
 function AddStudentModal({ mobile }) {
-  const { modal, setModal, data, closeModal, showToast, T } = useApp();
+  const { modal, data, closeModal, addStudent, T } = useApp();
   const m = modal;
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [instructorId, setInstructorId] = useState(m.instructorId || data.instructors[0]?.id || '');
   const [pkg, setPkg] = useState(m.pkg || '30');
+  const [cat, setCat] = useState('B');
+  const price = pkg === '20' ? 260 : pkg === '30' ? 360 : 460;
 
   return (
     <ModalShell title={T('add_student')} mobile={mobile} footer={
       <>
         <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
-        <button onClick={() => { closeModal(); showToast(T('add_student') + ' ✓'); }} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+        <button onClick={() => addStudent({ name: name.trim(), phone, email: email.trim(), instructorId: instructorId || null, total: Number(pkg), price, cat })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
       </>
     }>
       <div style={{ display: 'flex', gap: 12 }}>
-        <div style={{ flex: 1 }}><ModalField label={T('name')}><input placeholder="Emri Mbiemri" style={inputStyle()} /></ModalField></div>
-        <div style={{ flex: 1 }}><ModalField label={T('phone')}><input placeholder="+383 4…" style={inputStyle()} /></ModalField></div>
+        <div style={{ flex: 1 }}><ModalField label={T('name')}><input value={name} onChange={e => setName(e.target.value)} placeholder="Emri Mbiemri" style={inputStyle()} /></ModalField></div>
+        <div style={{ flex: 1 }}><ModalField label={T('phone')}><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+383 4…" style={inputStyle()} /></ModalField></div>
       </div>
+      <ModalField label="Email (student can sign in with it)">
+        <input value={email} onChange={e => setEmail(e.target.value)} placeholder="student@email.com" style={inputStyle()} />
+      </ModalField>
       <ModalField label={T('instructor')}>
         <div style={{ position: 'relative' }}>
-          <select defaultValue={m.instructorId || data.instructors[0].id} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
+          <select value={instructorId} onChange={e => setInstructorId(e.target.value)} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
+            {!data.instructors.length && <option value="">No instructors yet</option>}
             {data.instructors.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 11, top: 12, color: C.mut, pointerEvents: 'none' }}><Icon name="chevR" size={14} sw={2.2} /></span>
@@ -209,7 +237,7 @@ function AddStudentModal({ mobile }) {
       </ModalField>
       <ModalField label="Category">
         <div style={{ position: 'relative' }}>
-          <select defaultValue="B" style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
+          <select value={cat} onChange={e => setCat(e.target.value)} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
             <option value="B">B — Car</option>
             <option value="A">A — Motorcycle</option>
             <option value="C">C — Truck</option>
@@ -217,6 +245,143 @@ function AddStudentModal({ mobile }) {
           <span style={{ position: 'absolute', right: 11, top: 12, color: C.mut, pointerEvents: 'none' }}><Icon name="chevR" size={14} sw={2.2} /></span>
         </div>
       </ModalField>
+    </ModalShell>
+  );
+}
+
+const INSTRUCTOR_COLORS = ['#2a6fdb', '#6557d1', '#0e8f9b', '#b9821a', '#1f8a5b', '#d6493a'];
+
+function AddInstructorModal({ mobile }) {
+  const { data, closeModal, addInstructor, T } = useApp();
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [cat, setCat] = useState('B');
+  const [color, setColor] = useState(INSTRUCTOR_COLORS[0]);
+  const [vehicleId, setVehicleId] = useState(data.vehicles[0]?.id || '');
+
+  return (
+    <ModalShell title={T('instructors')} mobile={mobile} footer={
+      <>
+        <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
+        <button onClick={() => addInstructor({ name: name.trim(), phone, email: email.trim(), cat, color, vehicleId: vehicleId || null })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+      </>
+    }>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1 }}><ModalField label={T('name')}><input value={name} onChange={e => setName(e.target.value)} placeholder="Emri Mbiemri" style={inputStyle()} /></ModalField></div>
+        <div style={{ flex: 1 }}><ModalField label={T('phone')}><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+383 4…" style={inputStyle()} /></ModalField></div>
+      </div>
+      <ModalField label="Email (instructor can sign in with it)">
+        <input value={email} onChange={e => setEmail(e.target.value)} placeholder="instructor@email.com" style={inputStyle()} />
+      </ModalField>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <ModalField label="Categories">
+            <input value={cat} onChange={e => setCat(e.target.value)} placeholder="B or B,C" style={inputStyle()} />
+          </ModalField>
+        </div>
+        <div style={{ flex: 1 }}>
+          <ModalField label="Calendar color">
+            <div style={{ display: 'flex', gap: 7, paddingTop: 6 }}>
+              {INSTRUCTOR_COLORS.map(c => (
+                <button key={c} onClick={() => setColor(c)} style={{ width: 26, height: 26, borderRadius: '50%', background: c, border: color === c ? '3px solid ' + C.ink : '3px solid transparent', cursor: 'pointer', padding: 0 }} />
+              ))}
+            </div>
+          </ModalField>
+        </div>
+      </div>
+      <ModalField label={T('vehicle')}>
+        <div style={{ position: 'relative' }}>
+          <select value={vehicleId} onChange={e => setVehicleId(e.target.value)} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
+            <option value="">—</option>
+            {data.vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
+          </select>
+          <span style={{ position: 'absolute', right: 11, top: 12, color: C.mut, pointerEvents: 'none' }}><Icon name="chevR" size={14} sw={2.2} /></span>
+        </div>
+      </ModalField>
+    </ModalShell>
+  );
+}
+
+function AddVehicleModal({ mobile }) {
+  const { closeModal, addVehicle, T } = useApp();
+  const [name, setName] = useState('');
+  const [plate, setPlate] = useState('');
+  const [cat, setCat] = useState('B');
+  const [year, setYear] = useState('');
+  const [reg, setReg] = useState('');
+  const [ins, setIns] = useState('');
+  const [km, setKm] = useState('');
+
+  return (
+    <ModalShell title={T('vehicles')} mobile={mobile} footer={
+      <>
+        <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
+        <button onClick={() => addVehicle({ name: name.trim(), plate: plate.trim(), cat, year: year ? Number(year) : null, reg: reg || null, ins: ins || null, km: km ? Number(km) : 0 })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+      </>
+    }>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1 }}><ModalField label={T('name')}><input value={name} onChange={e => setName(e.target.value)} placeholder="VW Golf 7" style={inputStyle()} /></ModalField></div>
+        <div style={{ flex: 1 }}><ModalField label="Plate"><input value={plate} onChange={e => setPlate(e.target.value)} placeholder="01-123-AB" style={inputStyle()} /></ModalField></div>
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1 }}><ModalField label="Category"><input value={cat} onChange={e => setCat(e.target.value)} style={inputStyle()} /></ModalField></div>
+        <div style={{ flex: 1 }}><ModalField label="Year"><input type="number" value={year} onChange={e => setYear(e.target.value)} placeholder="2020" style={inputStyle()} /></ModalField></div>
+        <div style={{ flex: 1 }}><ModalField label="Km"><input type="number" value={km} onChange={e => setKm(e.target.value)} placeholder="120000" style={inputStyle()} /></ModalField></div>
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1 }}><ModalField label="Registration until"><input type="date" value={reg} onChange={e => setReg(e.target.value)} style={inputStyle()} /></ModalField></div>
+        <div style={{ flex: 1 }}><ModalField label="Insurance until"><input type="date" value={ins} onChange={e => setIns(e.target.value)} style={inputStyle()} /></ModalField></div>
+      </div>
+    </ModalShell>
+  );
+}
+
+function AddExamModal({ mobile }) {
+  const { modal, data, closeModal, addExam, T } = useApp();
+  const [studentId, setStudentId] = useState(modal.studentId || data.students[0]?.id || '');
+  const [type, setType] = useState('theory');
+  const [date, setDate] = useState(todayISO());
+
+  if (!data.students.length) {
+    return (
+      <ModalShell title={T('exams')} mobile={mobile} footer={<button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>}>
+        <div style={{ fontSize: 13.5, color: C.mut }}>Add a student first — exams are scheduled for a student.</div>
+      </ModalShell>
+    );
+  }
+
+  return (
+    <ModalShell title={T('exams')} mobile={mobile} footer={
+      <>
+        <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
+        <button onClick={() => addExam({ studentId, type, date })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+      </>
+    }>
+      <ModalField label={T('student')}>
+        <div style={{ position: 'relative' }}>
+          <select value={studentId} onChange={e => setStudentId(e.target.value)} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
+            {data.students.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
+          </select>
+          <span style={{ position: 'absolute', right: 11, top: 12, color: C.mut, pointerEvents: 'none' }}><Icon name="chevR" size={14} sw={2.2} /></span>
+        </div>
+      </ModalField>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <ModalField label="Type">
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[['theory', T('theory')], ['practical', T('practical')]].map(([v, l]) => (
+                <button key={v} onClick={() => setType(v)} style={{ flex: 1, border: '1px solid ' + (type === v ? C.pri : C.line), background: type === v ? C.priBg : C.surf, color: type === v ? C.pri : C.ink2, fontSize: 12.5, fontWeight: 600, padding: '9px 4px', borderRadius: 9 }}>{l}</button>
+              ))}
+            </div>
+          </ModalField>
+        </div>
+        <div style={{ flex: 1 }}>
+          <ModalField label={T('date')}>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle()} />
+          </ModalField>
+        </div>
+      </div>
     </ModalShell>
   );
 }
@@ -229,5 +394,8 @@ export default function Modal() {
   if (modal.type === 'lesson') return <NewLessonModal mobile={mobile} />;
   if (modal.type === 'payment') return <PaymentModal mobile={mobile} />;
   if (modal.type === 'student') return <AddStudentModal mobile={mobile} />;
+  if (modal.type === 'instructor') return <AddInstructorModal mobile={mobile} />;
+  if (modal.type === 'vehicle') return <AddVehicleModal mobile={mobile} />;
+  if (modal.type === 'exam') return <AddExamModal mobile={mobile} />;
   return null;
 }

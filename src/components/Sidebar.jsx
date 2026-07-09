@@ -32,7 +32,7 @@ export function roleNav(role) {
 /* DESKTOP / DRAWER SIDEBAR                                       */
 /* ============================================================= */
 export default function Sidebar({ asDrawer = false }) {
-  const { route, go, T, notifs, role, me, logout, drawerOpen, setDrawerOpen } = useApp();
+  const { route, go, T, notifs, role, me, school, logout, drawerOpen, setDrawerOpen } = useApp();
   const isMobile = useIsMobile();
   const unread = notifs.filter(n => !n.read).length;
   const navItems = roleNav(role);
@@ -68,12 +68,14 @@ export default function Sidebar({ asDrawer = false }) {
   const panel = (
     <div style={{ width: 248, maxWidth: '82vw', height: '100%', background: C.side, display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '18px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 18px' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 6px 16px -4px rgba(42,111,219,.6)' }}>
-          <Icon name="car2" size={20} sw={2} />
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 6px 16px -4px rgba(42,111,219,.6)', overflow: 'hidden' }}>
+          {school?.logo
+            ? <img src={school.logo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <Icon name="car2" size={20} sw={2} />}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ color: '#fff', fontFamily: font.disp, fontWeight: 700, fontSize: 17, letterSpacing: '-.02em' }}>DriveFlow</div>
-          <div style={{ color: C.sideMut, fontSize: 10.5, fontWeight: 600, letterSpacing: '.04em', marginTop: -1 }}>Autoshkolla OS</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: '#fff', fontFamily: font.disp, fontWeight: 700, fontSize: school?.name && school.name.length > 14 ? 14 : 17, letterSpacing: '-.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{school?.name || 'DriveFlow'}</div>
+          <div style={{ color: C.sideMut, fontSize: 10.5, fontWeight: 600, letterSpacing: '.04em', marginTop: -1 }}>{school?.name ? 'DriveFlow' : 'Autoshkolla OS'}</div>
         </div>
         {asDrawer && (
           <button onClick={() => setDrawerOpen(false)} style={{ border: 'none', background: 'transparent', color: C.sideMut, display: 'flex', padding: 4, cursor: 'pointer' }}>

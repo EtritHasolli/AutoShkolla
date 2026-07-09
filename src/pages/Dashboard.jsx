@@ -32,7 +32,7 @@ function Card({ title, extra, children }) {
 }
 
 export default function Dashboard() {
-  const { lessons, data, todayIdx, T, go, openModal, openStudent, showToast } = useApp();
+  const { lessons, data, todayIdx, T, go, openModal, openStudent, showToast, me } = useApp();
   const isMobile = useIsMobile();
   const todays = lessons.filter(l => l.day === todayIdx).sort((a, b) => a.hour - b.hour);
   const doneToday = todays.filter(l => l.status === 'completed').length;
@@ -54,7 +54,7 @@ export default function Dashboard() {
     <div style={{ padding: isMobile ? '18px 16px 32px' : '24px 26px 40px', animation: 'df-fade .25s' }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div style={{ fontFamily: font.disp, fontSize: 24, fontWeight: 700, color: C.ink, letterSpacing: '-.02em' }}>{T('good_morning')}, Astrit</div>
+          <div style={{ fontFamily: font.disp, fontSize: 24, fontWeight: 700, color: C.ink, letterSpacing: '-.02em' }}>{T('good_morning')}, {(me?.name || 'Astrit').split(' ')[0]}</div>
           <div style={{ fontSize: 13.5, color: C.mut, marginTop: 3 }}>{todays.length} {T('sched_today')} · {doneToday} {T('completed').toLowerCase()}</div>
         </div>
         <div style={{ display: 'flex', gap: 9 }}>

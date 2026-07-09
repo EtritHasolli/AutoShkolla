@@ -84,7 +84,7 @@ export default function Calendar() {
         </div>
         <SelectFilter value={calFilterI} onChange={setCalFilterI} opts={[{ v: 'all', l: T('instructor') + ': ' + T('all') }, ...data.instructors.map(i => ({ v: i.id, l: i.name }))]} />
         <SelectFilter value={calFilterV} onChange={setCalFilterV} opts={[{ v: 'all', l: T('vehicle') + ': ' + T('all') }, ...data.vehicles.map(v => ({ v: v.id, l: v.name }))]} />
-        <button onClick={() => openModal({ type: 'lesson', day: calView === 'day' ? calDay : todayIdx, hour: 9, studentId: data.students[0].id, instructorId: data.instructors[0].id, vehicleId: data.vehicles[0].id, ltype: 'city' })}
+        <button onClick={() => openModal({ type: 'lesson', day: calView === 'day' ? calDay : todayIdx, hour: 9, studentId: data.students[0]?.id, instructorId: data.instructors[0]?.id, vehicleId: data.vehicles[0]?.id, ltype: 'city' })}
           style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
           <Icon name="plus" size={16} sw={2.2} />{T('new_lesson')}
         </button>
@@ -127,7 +127,7 @@ export default function Calendar() {
                 <div key={d}
                   onDragOver={e => e.preventDefault()}
                   onDrop={e => { e.preventDefault(); if (dragId) moveLesson(dragId, d, hr); }}
-                  onClick={() => { if (!ls.length) openModal({ type: 'lesson', day: d, hour: hr, studentId: data.students[0].id, instructorId: data.instructors[0].id, vehicleId: data.vehicles[0].id, ltype: 'city' }); }}
+                  onClick={() => { if (!ls.length) openModal({ type: 'lesson', day: d, hour: hr, studentId: data.students[0]?.id, instructorId: data.instructors[0]?.id, vehicleId: data.vehicles[0]?.id, ltype: 'city' }); }}
                   style={{ borderTop: '1px solid ' + C.line2, borderLeft: '1px solid ' + C.line2, padding: 3, position: 'relative', cursor: ls.length ? 'default' : 'pointer', background: d === todayIdx ? 'rgba(42,111,219,.022)' : 'transparent' }}>
                   {ls.map(l => (
                     <LessonChip key={l.id} lesson={l} big={effView === 'day'}

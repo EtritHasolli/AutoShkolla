@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { C, font } from '../data/seed.js';
 
 export default function Settings() {
-  const { lang, setLang, T } = useApp();
+  const { lang, setLang, school, updateSchoolProfile, role, T } = useApp();
+  const [name, setName] = useState(school?.name || 'Autoshkolla Prishtina');
+  const [phone, setPhone] = useState(school?.phone || '+383 38 224 100');
+  const [city, setCity] = useState(school?.city || 'Prishtinë');
+  const [address, setAddress] = useState(school?.address || 'Rr. Nëna Terezë 24');
+  const canEdit = ['owner', 'administrator'].includes(role);
 
   function Card({ title, children }) {
     return (
@@ -30,12 +35,18 @@ export default function Settings() {
   return (
     <div style={{ padding: '22px 26px 40px', maxWidth: 680, animation: 'df-fade .25s' }}>
       <Card title="School profile">
-        <Field label="School name"><input defaultValue="Autoshkolla Prishtina" style={inp} /></Field>
+        <Field label="School name"><input value={name} onChange={e => setName(e.target.value)} disabled={!canEdit} style={inp} /></Field>
         <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1 }}><Field label={T('phone')}><input defaultValue="+383 38 224 100" style={inp} /></Field></div>
-          <div style={{ flex: 1 }}><Field label="City"><input defaultValue="Prishtinë" style={inp} /></Field></div>
+          <div style={{ flex: 1 }}><Field label={T('phone')}><input value={phone} onChange={e => setPhone(e.target.value)} disabled={!canEdit} style={inp} /></Field></div>
+          <div style={{ flex: 1 }}><Field label="City"><input value={city} onChange={e => setCity(e.target.value)} disabled={!canEdit} style={inp} /></Field></div>
         </div>
-        <Field label="Address"><input defaultValue="Rr. Nëna Terezë 24" style={inp} /></Field>
+        <Field label="Address"><input value={address} onChange={e => setAddress(e.target.value)} disabled={!canEdit} style={inp} /></Field>
+        {canEdit && (
+          <button onClick={() => updateSchoolProfile({ name, phone, city, address })}
+            style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 18px', borderRadius: 9, cursor: 'pointer' }}>
+            {T('save')}
+          </button>
+        )}
       </Card>
       <Card title="Preferences">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid ' + C.line2 }}>

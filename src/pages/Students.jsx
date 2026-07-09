@@ -49,8 +49,8 @@ function StudentList() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: i.color, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: C.ink2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i.name}</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: i ? i.color : C.line, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: C.ink2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i ? i.name : 'Unassigned'}</span>
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: C.mut, marginBottom: 4, fontWeight: 600 }}>
@@ -238,8 +238,8 @@ function ProfLessons({ s }) {
           <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 0', borderBottom: '1px solid ' + C.line2 }}>
             <div style={{ fontFamily: font.mono, fontSize: 12.5, color: C.ink2, fontWeight: 600, width: 80 }}>{days[l.day]} {String(l.hour).padStart(2, '0')}:00</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink }}>{T(l.type)} · {i.name}</div>
-              <div style={{ fontSize: 12, color: C.mut }}>{v.name} · {T('pickup')}: {l.pickup}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink }}>{T(l.type)} · {i ? i.name : '—'}</div>
+              <div style={{ fontSize: 12, color: C.mut }}>{v ? v.name : '—'} · {T('pickup')}: {l.pickup}</div>
             </div>
             <Pill text={T(l.status)} color={statusColor(l.status)} bg={statusBg(l.status)} />
           </div>
@@ -275,8 +275,9 @@ function ProfDocs({ s }) {
 function StudentProfile() {
   const { data, selStudent, setSelStudent, studentTab, setStudentTab, openModal, T, todayIdx } = useApp();
   const s = data.students.find(x => x.id === selStudent);
+  if (!s) return null;
   const i = data.instructors.find(x => x.id === s.instructorId);
-  const v = data.vehicles.find(x => x.id === i.vehicle);
+  const v = i ? data.vehicles.find(x => x.id === i.vehicle) : null;
 
   const tabs = [['overview', 'Overview'], ['progress', T('progress')], ['payments', T('payments')], ['lessons', T('lessons')], ['documents', 'Documents']];
 
@@ -292,7 +293,7 @@ function StudentProfile() {
           <div style={{ fontFamily: font.disp, fontSize: 23, fontWeight: 700, color: C.ink, letterSpacing: '-.02em' }}>{s.name}</div>
           <div style={{ display: 'flex', gap: 14, marginTop: 5, flexWrap: 'wrap', color: C.mut, fontSize: 13 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="phone" size={14} sw={1.8} />{s.phone}</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="students" size={14} sw={1.8} />{i.name}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="students" size={14} sw={1.8} />{i ? i.name : 'Unassigned'}</span>
             <span>Cat. {s.cat}</span>
           </div>
         </div>
@@ -300,7 +301,7 @@ function StudentProfile() {
           <button onClick={() => openModal({ type: 'payment', studentId: s.id })} style={btnGhostStyle()}>
             <Icon name="euro" size={16} sw={2} />{T('record_payment')}
           </button>
-          <button onClick={() => openModal({ type: 'lesson', day: todayIdx, hour: 9, studentId: s.id, instructorId: i.id, vehicleId: i.vehicle, ltype: 'city' })}
+          <button onClick={() => openModal({ type: 'lesson', day: todayIdx, hour: 9, studentId: s.id, instructorId: i?.id || data.instructors[0]?.id, vehicleId: i?.vehicle || data.vehicles[0]?.id, ltype: 'city' })}
             style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 10 }}>
             <Icon name="plus" size={16} sw={2.2} />{T('schedule_lesson')}
           </button>
