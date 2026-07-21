@@ -143,6 +143,9 @@ export async function fetchPublicSchools() {
   return data.map(s => ({
     id: s.id, name: s.name, city: s.city || '—', address: s.address || '',
     phone: s.phone || '', cats: s.cats || [], logo: s.logo_url,
+    mapsUrl: s.maps_url || '',
+    hoursStart: s.hours_start || '08:00', hoursEnd: s.hours_end || '18:00',
+    workingDays: s.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
     joined: s.joined, students: s.students, instructors: s.instructors, vehicles: s.vehicles,
   }));
 }
@@ -154,7 +157,9 @@ export async function fetchSchool(schoolId) {
     id: data.id, name: data.name, bizNumber: data.biz_number, address: data.address,
     city: data.city, phone: data.phone, logo: data.logo_url, cats: data.cats,
     plan: data.plan, status: data.status,
-    currency: data.currency || 'EUR', workingHours: data.working_hours || '08:00 – 18:00',
+    mapsUrl: data.maps_url || '',
+    hoursStart: data.hours_start || '08:00', hoursEnd: data.hours_end || '18:00',
+    workingDays: data.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
   };
 }
 
@@ -277,6 +282,7 @@ export const db = {
 
   updateSchool: async (id, s) => upd('schools', id, {
     name: s.name, phone: s.phone, city: s.city, address: s.address,
-    currency: s.currency, working_hours: s.workingHours,
+    maps_url: s.mapsUrl,
+    hours_start: s.hoursStart, hours_end: s.hoursEnd, working_days: s.workingDays,
   }),
 };

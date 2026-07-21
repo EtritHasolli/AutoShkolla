@@ -40,7 +40,12 @@ export function AppProvider({ children }) {
   // Public directory for the landing page (demo: derived from the mock platform data)
   const [publicSchools, setPublicSchools] = useState(isLive ? [] : platformSchools
     .filter(s => s.status !== 'suspended')
-    .map(s => ({ id: s.id, name: s.name, city: s.city, address: '', phone: '', cats: s.cats, logo: null, joined: s.joined, students: s.students, instructors: s.instructors, vehicles: s.vehicles })));
+    .map(s => ({
+      id: s.id, name: s.name, city: s.city, address: '', phone: '', cats: s.cats, logo: null,
+      mapsUrl: '', hoursStart: '08:00', hoursEnd: '18:00', workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      joined: s.joined, students: s.students, instructors: s.instructors, vehicles: s.vehicles,
+    })));
+  const [viewingSchoolId, setViewingSchoolId] = useState(null);
 
   const [selStudent, setSelStudent] = useState(null);
   const [modal, setModal] = useState(null);
@@ -206,17 +211,17 @@ export function AppProvider({ children }) {
     const r = DEMO_PASS_ROLES[password];
     if (!r) return { ok: false, error: 'Invalid email or password.' };
     if (r === 'superadmin') {
-      setUser({ role: 'superadmin' });
+      setUser({ role: 'superadmin', email: DEMO_EMAIL });
       setPortal('superadmin');
       setIsLoggedIn(true);
     } else {
-      loginSchool(r);
+      loginSchool(r, DEMO_EMAIL);
     }
     return { ok: true };
   }
 
-  function loginSchool(r) {
-    setUser({ role: r });
+  function loginSchool(r, email) {
+    setUser({ role: r, email });
     setRole(r);
     setPortal('school');
     setRoute('dashboard');
@@ -266,6 +271,16 @@ export function AppProvider({ children }) {
     setSchool(null);
     setSelStudent(null);
     setAuthScreen('landing');
+  }
+
+  // Dev-only view switcher (Settings page) — lets the designated test account
+  // hop between the four portal/role combinations without separate logins.
+  const isDevSuperadmin = (user?.email || '').toLowerCase() === DEMO_EMAIL.toLowerCase();
+  function devSwitchView(view) {
+    if (view === 'superadmin') { setPortal('superadmin'); return; }
+    setPortal('school');
+    setRole(view);
+    setRoute('dashboard');
   }
 
   function go(r) { setRoute(r); setSelStudent(null); setDrawerOpen(false); }
@@ -581,6 +596,8 @@ export function AppProvider({ children }) {
   const ctx = {
     lang, setLang, isLoggedIn, user, portal, school, me, isLive,
     authenticate, loginSchool, registerSchool, enrollStudent, publicSchools, logout,
+    viewingSchoolId, setViewingSchoolId,
+    isDevSuperadmin, devSwitchView,
     authScreen, setAuthScreen,
     role, setRole, drawerOpen, setDrawerOpen,
     route, go, mRoute, setMRoute,

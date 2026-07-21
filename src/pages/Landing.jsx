@@ -88,9 +88,9 @@ function EnrollModal({ school, onClose }) {
   );
 }
 
-function SchoolCard({ s, onEnroll }) {
+function SchoolCard({ s, onEnroll, onOpen }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid ' + C.line, borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14, transition: 'transform .15s, box-shadow .15s' }}
+    <div onClick={() => onOpen(s.id)} style={{ background: '#fff', border: '1px solid ' + C.line, borderRadius: 18, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 14, cursor: 'pointer', transition: 'transform .15s, box-shadow .15s' }}
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 16px 40px -18px rgba(10,20,40,.25)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
@@ -120,15 +120,106 @@ function SchoolCard({ s, onEnroll }) {
         ))}
       </div>
 
-      <button onClick={() => onEnroll(s)} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13.5, fontWeight: 700, padding: '11px', borderRadius: 10, cursor: 'pointer', fontFamily: font.body }}>
+      <button onClick={e => { e.stopPropagation(); onEnroll(s); }} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13.5, fontWeight: 700, padding: '11px', borderRadius: 10, cursor: 'pointer', fontFamily: font.body }}>
         Enroll
       </button>
     </div>
   );
 }
 
+const DAY_LABELS = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+const ALL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/* Full-page detail view for a single school, reached by clicking a SchoolCard */
+function SchoolDetail({ school: s, onBack, onEnroll }) {
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: font.body }}>
+      <div style={{ background: 'linear-gradient(135deg,#0e1219 0%,#141c2b 60%,#1a1f2e 100%)' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', padding: '18px 24px 46px' }}>
+          <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid rgba(255,255,255,.18)', background: 'transparent', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontFamily: font.body, marginBottom: 20 }}>
+            <Icon name="chevL" size={15} sw={2} /> Back to directory
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 62, height: 62, borderRadius: 16, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+              {s.logo ? <img src={s.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Icon name="car2" size={30} sw={1.9} />}
+            </div>
+            <div>
+              <div style={{ fontFamily: font.disp, fontSize: 26, fontWeight: 700, color: '#fff' }}>{s.name}</div>
+              <div style={{ fontSize: 13.5, color: '#9aa3b1', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <Icon name="pin" size={14} sw={2} />{s.city}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 24px 70px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginTop: -26 }}>
+          <div style={{ background: '#fff', border: '1px solid ' + C.line, borderRadius: 16, padding: '20px 22px', boxShadow: '0 14px 40px -20px rgba(10,20,40,.3)' }}>
+            <div style={{ fontFamily: font.disp, fontWeight: 700, fontSize: 15, color: C.ink, marginBottom: 14 }}>Contact & location</div>
+            {s.address && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                <Icon name="pin" size={15} sw={2} />
+                <span style={{ fontSize: 13.5, color: C.ink2 }}>{s.address}</span>
+              </div>
+            )}
+            {s.phone && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <Icon name="phone" size={15} sw={2} />
+                <span style={{ fontSize: 13.5, color: C.ink2 }}>{s.phone}</span>
+              </div>
+            )}
+            {s.mapsUrl && (
+              <a href={s.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 13, fontWeight: 700, color: C.pri, textDecoration: 'none' }}>
+                <Icon name="pin" size={14} sw={2} /> View on map
+              </a>
+            )}
+          </div>
+
+          <div style={{ background: '#fff', border: '1px solid ' + C.line, borderRadius: 16, padding: '20px 22px', boxShadow: '0 14px 40px -20px rgba(10,20,40,.3)' }}>
+            <div style={{ fontFamily: font.disp, fontWeight: 700, fontSize: 15, color: C.ink, marginBottom: 14 }}>Working hours</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Icon name="clock" size={15} sw={2} />
+              <span style={{ fontSize: 13.5, color: C.ink2, fontFamily: font.mono, fontWeight: 600 }}>{s.hoursStart} – {s.hoursEnd}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              {ALL_DAYS.map(d => {
+                const on = (s.workingDays || []).includes(d);
+                return (
+                  <span key={d} title={DAY_LABELS[d]} style={{ fontSize: 11.5, fontWeight: 700, color: on ? C.pri : C.mut, background: on ? C.priBg : C.bg, padding: '4px 9px', borderRadius: 7 }}>
+                    {d}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 18 }}>
+          {(s.cats || []).map(c => (
+            <span key={c} style={{ fontSize: 11.5, fontWeight: 700, color: C.pri, background: C.priBg, padding: '3px 9px', borderRadius: 7 }}>{c}</span>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', textAlign: 'center', background: '#fff', border: '1px solid ' + C.line, borderRadius: 14, padding: '16px 0', marginTop: 18 }}>
+          {[[s.students, 'Students'], [s.instructors, 'Instructors'], [s.vehicles, 'Vehicles']].map(([v, l]) => (
+            <div key={l}>
+              <div style={{ fontFamily: font.disp, fontSize: 19, fontWeight: 700, color: C.ink }}>{v}</div>
+              <div style={{ fontSize: 11.5, color: C.mut, fontWeight: 600 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={() => onEnroll(s)} style={{ width: '100%', border: 'none', background: C.pri, color: '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12, cursor: 'pointer', fontFamily: font.body, marginTop: 22 }}>
+          Enroll at {s.name}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
-  const { publicSchools, setAuthScreen } = useApp();
+  const { publicSchools, setAuthScreen, viewingSchoolId, setViewingSchoolId } = useApp();
   const [q, setQ] = useState('');
   const [city, setCity] = useState('all');
   const [cat, setCat] = useState('all');
@@ -144,6 +235,16 @@ export default function Landing() {
   });
 
   const selStyle = { border: '1px solid ' + C.line, background: '#fff', color: C.ink, fontSize: 13.5, padding: '10px 13px', borderRadius: 10, outline: 'none', fontFamily: font.body, fontWeight: 600, cursor: 'pointer', appearance: 'auto' };
+
+  const viewingSchool = viewingSchoolId ? publicSchools.find(s => s.id === viewingSchoolId) : null;
+  if (viewingSchool) {
+    return (
+      <>
+        <SchoolDetail school={viewingSchool} onBack={() => setViewingSchoolId(null)} onEnroll={setEnrolling} />
+        {enrolling && <EnrollModal school={enrolling} onClose={() => setEnrolling(null)} />}
+      </>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: font.body }}>
@@ -200,7 +301,7 @@ export default function Landing() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18, marginTop: 26 }}>
-          {filtered.map(s => <SchoolCard key={s.id} s={s} onEnroll={setEnrolling} />)}
+          {filtered.map(s => <SchoolCard key={s.id} s={s} onEnroll={setEnrolling} onOpen={setViewingSchoolId} />)}
         </div>
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: C.soft, fontSize: 14 }}>

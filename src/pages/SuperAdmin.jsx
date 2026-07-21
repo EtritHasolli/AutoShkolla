@@ -11,7 +11,7 @@ function statusStyle(s) {
   if (s === 'suspended') return { color: C.red, bg: C.redBg, label: 'Suspended' };
   return { color: C.mut, bg: C.line2, label: s };
 }
-const euro = n => '€' + Number(n).toLocaleString('de-DE');
+const euro = n => Number(n).toLocaleString('de-DE') + '€';
 const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const fmtShort = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
@@ -297,7 +297,10 @@ const NAV = [
   ['schools', 'students', 'Schools'],
 ];
 
+const DEV_VIEWS = [['owner', 'Owner'], ['instructor', 'Instructor'], ['student', 'Student']];
+
 function SidebarPanel({ nav, setNav, openId, setOpenId, logout, user, onNavigate }) {
+  const { isDevSuperadmin, devSwitchView } = useApp();
   return (
     <div style={{ width: 230, maxWidth: '82vw', height: '100%', background: C.side, display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '18px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px' }}>
@@ -335,6 +338,16 @@ function SidebarPanel({ nav, setNav, openId, setOpenId, logout, user, onNavigate
             <div style={{ color: C.sideMut, fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || 'platform admin'}</div>
           </div>
         </div>
+        {isDevSuperadmin && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ color: C.sideMut, fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em', padding: '0 13px 6px' }}>VIEW AS (TESTING)</div>
+            {DEV_VIEWS.map(([v, label]) => (
+              <button key={v} onClick={() => devSwitchView(v)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', color: C.sideMut, padding: '8px 13px', borderRadius: 10, fontSize: 12.5, fontWeight: 500, cursor: 'pointer', textAlign: 'left', fontFamily: font.body }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', color: C.sideMut, padding: '9px 13px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font.body }}>
           <Icon name="logout" size={17} sw={1.8} /> Sign out
         </button>

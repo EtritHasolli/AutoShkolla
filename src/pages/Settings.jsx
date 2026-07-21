@@ -2,16 +2,21 @@ import React, { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { C, font } from '../data/seed.js';
 
+const DEV_VIEWS = [['owner', 'Owner'], ['instructor', 'Instructor'], ['student', 'Student'], ['superadmin', 'Super admin']];
+
 export default function Settings() {
-  const { lang, setLang, school, updateSchoolProfile, role, T } = useApp();
+  const { lang, setLang, school, updateSchoolProfile, role, T, isDevSuperadmin, devSwitchView } = useApp();
   const [name, setName] = useState(school?.name || 'Autoshkolla Prishtina');
   const [phone, setPhone] = useState(school?.phone || '+383 38 224 100');
   const [city, setCity] = useState(school?.city || 'Prishtinë');
   const [address, setAddress] = useState(school?.address || 'Rr. Nëna Terezë 24');
-  const [currency, setCurrency] = useState(school?.currency || 'EUR');
-  const [workingHours, setWorkingHours] = useState(school?.workingHours || '08:00 – 18:00');
+  const [mapsUrl, setMapsUrl] = useState(school?.mapsUrl || '');
+  const [hoursStart, setHoursStart] = useState(school?.hoursStart || '08:00');
+  const [hoursEnd, setHoursEnd] = useState(school?.hoursEnd || '18:00');
+  const [workingDays, setWorkingDays] = useState(school?.workingDays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
   const canEdit = ['owner', 'administrator'].includes(role);
-  const CURRENCIES = [['EUR', 'EUR (€)'], ['USD', 'USD ($)'], ['GBP', 'GBP (£)'], ['CHF', 'CHF (Fr)']];
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const toggleDay = (d) => setWorkingDays(ds => ds.includes(d) ? ds.filter(x => x !== d) : [...ds, d]);
 
   function Card({ title, children }) {
     return (
@@ -44,8 +49,11 @@ export default function Settings() {
           <div style={{ flex: 1 }}><Field label="City"><input value={city} onChange={e => setCity(e.target.value)} disabled={!canEdit} style={inp} /></Field></div>
         </div>
         <Field label="Address"><input value={address} onChange={e => setAddress(e.target.value)} disabled={!canEdit} style={inp} /></Field>
+        <Field label="Google Maps link (optional)">
+          <input value={mapsUrl} onChange={e => setMapsUrl(e.target.value)} disabled={!canEdit} placeholder="https://maps.google.com/…" style={inp} />
+        </Field>
         {canEdit && (
-          <button onClick={() => updateSchoolProfile({ name, phone, city, address, currency, workingHours })}
+          <button onClick={() => updateSchoolProfile({ name, phone, city, address, mapsUrl, hoursStart, hoursEnd, workingDays })}
             style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 18px', borderRadius: 9, cursor: 'pointer' }}>
             {T('save')}
           </button>
@@ -61,24 +69,47 @@ export default function Settings() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid ' + C.line2, flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>Currency</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>Working hours</span>
           {canEdit ? (
-            <select value={currency} onChange={e => setCurrency(e.target.value)} style={{ ...inp, width: 'auto', padding: '7px 10px', fontWeight: 600, cursor: 'pointer' }}>
-              {CURRENCIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input type="time" value={hoursStart} onChange={e => setHoursStart(e.target.value)} style={{ ...inp, width: 120, fontFamily: font.mono, fontWeight: 600 }} />
+              <span style={{ color: C.mut }}>–</span>
+              <input type="time" value={hoursEnd} onChange={e => setHoursEnd(e.target.value)} style={{ ...inp, width: 120, fontFamily: font.mono, fontWeight: 600 }} />
+            </div>
           ) : (
-            <span style={{ fontSize: 13.5, color: C.mut, fontWeight: 600 }}>{CURRENCIES.find(c => c[0] === currency)?.[1] || currency}</span>
+            <span style={{ fontSize: 13.5, color: C.mut, fontWeight: 600, fontFamily: font.mono }}>{hoursStart} – {hoursEnd}</span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>Working hours</span>
-          {canEdit ? (
-            <input value={workingHours} onChange={e => setWorkingHours(e.target.value)} placeholder="08:00 – 18:00" style={{ ...inp, width: 160, fontFamily: font.mono, fontWeight: 600 }} />
-          ) : (
-            <span style={{ fontSize: 13.5, color: C.mut, fontWeight: 600, fontFamily: font.mono }}>{workingHours}</span>
-          )}
+          <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>Working days</span>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {DAYS.map(d => {
+              const on = workingDays.includes(d);
+              return (
+                <button key={d} onClick={() => canEdit && toggleDay(d)} disabled={!canEdit}
+                  style={{ border: 'none', background: on ? C.pri : C.bg, color: on ? '#fff' : C.mut, fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, cursor: canEdit ? 'pointer' : 'default' }}>
+                  {d}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </Card>
+      {isDevSuperadmin && (
+        <Card title="View as (testing)">
+          <div style={{ fontSize: 12.5, color: C.mut, marginBottom: 12 }}>
+            Only visible to the designated test account. Switches which portal/role you see — no data changes.
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {DEV_VIEWS.map(([v, label]) => (
+              <button key={v} onClick={() => devSwitchView(v)}
+                style={{ border: '1px solid ' + C.line, background: role === v ? C.pri : C.surf, color: role === v ? '#fff' : C.ink, fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 9, cursor: 'pointer' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

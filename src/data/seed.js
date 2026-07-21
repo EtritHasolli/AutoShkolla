@@ -75,7 +75,7 @@ export const exams = [
 
 export const notifications = [
   { id: 'n1', type: 'reminder', title: 'Lesson reminder', body: 'Endrit Morina — tomorrow 09:00', time: '2h ago', status: 'sent', read: false },
-  { id: 'n2', type: 'payment', title: 'Payment reminder', body: 'Blerim Rexhepi — €180 remaining', time: '5h ago', status: 'pending', read: false },
+  { id: 'n2', type: 'payment', title: 'Payment reminder', body: 'Blerim Rexhepi — 180€ remaining', time: '5h ago', status: 'pending', read: false },
   { id: 'n3', type: 'cancel', title: 'Lesson cancelled', body: 'Festim Bytyqi cancelled Wed 16:00', time: '1d ago', status: 'sent', read: true },
   { id: 'n4', type: 'alert', title: 'Insurance expiring', body: 'VW Golf 7 — insurance ends Jul 4', time: '1d ago', status: 'sent', read: true },
   { id: 'n5', type: 'reminder', title: 'Exam reminder', body: 'Adelina Kelmendi — theory exam Jul 1', time: '2d ago', status: 'sent', read: true },

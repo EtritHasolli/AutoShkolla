@@ -136,4 +136,4 @@ export function payColor(p) {
 export function payBg(p) {
   return ({ paid: C.grnBg, partial: C.ambBg, unpaid: C.redBg })[p] || C.line2;
 }
-export function euro(n) { return '€' + Number(n).toLocaleString('de-DE'); }
+export function euro(n) { return Number(n).toLocaleString('de-DE') + '€'; }
