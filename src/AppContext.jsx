@@ -351,6 +351,42 @@ export function AppProvider({ children }) {
     return true;
   }
 
+  async function updateStudent(id, s) {
+    if (!s.name?.trim()) { showToast('Name is required'); return false; }
+    if (isLive) {
+      const ok = await live(() => db.updateStudent(id, s));
+      if (ok) { setModal(null); showToast(T('save') + ' ✓'); }
+      return ok;
+    }
+    setStudents(st => st.map(x => {
+      if (x.id !== id) return x;
+      const price = s.price;
+      const paid = Math.min(price, x.paid);
+      const due = Math.max(0, price - paid);
+      return {
+        ...x, name: s.name, phone: s.phone || '', cat: s.cat || x.cat,
+        instructorId: s.instructorId, total: s.total, remaining: Math.max(0, s.total - x.used),
+        price, paid, due, payment: due <= 0 ? 'paid' : paid > 0 ? 'partial' : 'unpaid',
+        email: s.email || '',
+      };
+    }));
+    setModal(null);
+    showToast(T('save') + ' ✓');
+    return true;
+  }
+
+  async function deleteStudent(id) {
+    // Mirrors the DB's FK behavior: lessons/payments/exams.student_id → cascade delete.
+    setStudents(st => st.filter(x => x.id !== id)); // optimistic
+    setLessons(ls => ls.filter(l => l.studentId !== id));
+    setPayments(ps => ps.filter(p => p.studentId !== id));
+    setExams(xs => xs.filter(e => e.studentId !== id));
+    if (isLive) live(() => db.deleteStudent(id));
+    setSelStudent(null);
+    setModal(null);
+    showToast(T('delete') + ' ✓');
+  }
+
   async function recordPayment(p) {
     const amount = Number(p.amount);
     if (!p.studentId || !amount || amount <= 0) { showToast('Pick a student and a valid amount'); return false; }
@@ -370,6 +406,21 @@ export function AppProvider({ children }) {
     return true;
   }
 
+  async function deletePayment(id) {
+    const p = payments.find(x => x.id === id);
+    setPayments(ps => ps.filter(x => x.id !== id)); // optimistic
+    if (p) {
+      setStudents(st => st.map(s => {
+        if (s.id !== p.studentId) return s;
+        const paid = Math.max(0, s.paid - p.amount), due = Math.max(0, s.price - paid);
+        return { ...s, paid, due, payment: due <= 0 ? 'paid' : paid > 0 ? 'partial' : 'unpaid' };
+      }));
+    }
+    if (isLive) live(() => db.deletePayment(id));
+    setModal(null);
+    showToast(T('delete') + ' ✓');
+  }
+
   async function addInstructor(i) {
     if (!i.name?.trim()) { showToast('Name is required'); return false; }
     if (isLive) {
@@ -384,6 +435,33 @@ export function AppProvider({ children }) {
     setModal(null);
     showToast(T('save') + ' ✓');
     return true;
+  }
+
+  async function updateInstructor(id, i) {
+    if (!i.name?.trim()) { showToast('Name is required'); return false; }
+    if (isLive) {
+      const ok = await live(() => db.updateInstructor(id, i));
+      if (ok) { setModal(null); showToast(T('save') + ' ✓'); }
+      return ok;
+    }
+    setInstructors(xs => xs.map(x => x.id === id ? {
+      ...x, name: i.name, cat: i.cat || x.cat, phone: i.phone || '',
+      color: i.color || x.color, vehicle: i.vehicleId || null, email: i.email || '',
+    } : x));
+    setModal(null);
+    showToast(T('save') + ' ✓');
+    return true;
+  }
+
+  async function deleteInstructor(id) {
+    // Mirrors the DB's FK behavior: students.instructor_id → set null,
+    // lessons.instructor_id → cascade delete (matches schema.sql).
+    setInstructors(xs => xs.filter(x => x.id !== id)); // optimistic
+    setStudents(st => st.map(s => s.instructorId === id ? { ...s, instructorId: null } : s));
+    setLessons(ls => ls.filter(l => l.instructorId !== id));
+    if (isLive) live(() => db.deleteInstructor(id));
+    setModal(null);
+    showToast(T('delete') + ' ✓');
   }
 
   async function addVehicle(v) {
@@ -402,6 +480,33 @@ export function AppProvider({ children }) {
     return true;
   }
 
+  async function updateVehicle(id, v) {
+    if (!v.name?.trim() || !v.plate?.trim()) { showToast('Name and plate are required'); return false; }
+    if (isLive) {
+      const ok = await live(() => db.updateVehicle(id, v));
+      if (ok) { setModal(null); showToast(T('save') + ' ✓'); }
+      return ok;
+    }
+    setVehicles(xs => xs.map(x => x.id === id ? {
+      ...x, name: v.name, plate: v.plate, cat: v.cat || x.cat, year: v.year || null,
+      reg: v.reg || null, ins: v.ins || null, km: v.km || 0,
+      status: v.status || x.status, service: v.service || null,
+    } : x));
+    setModal(null);
+    showToast(T('save') + ' ✓');
+    return true;
+  }
+
+  async function deleteVehicle(id) {
+    // Mirrors the DB's FK behavior: instructors.vehicle_id / lessons.vehicle_id → set null.
+    setVehicles(xs => xs.filter(x => x.id !== id)); // optimistic
+    setInstructors(xs => xs.map(i => i.vehicle === id ? { ...i, vehicle: null } : i));
+    setLessons(ls => ls.map(l => l.vehicleId === id ? { ...l, vehicleId: null } : l));
+    if (isLive) live(() => db.deleteVehicle(id));
+    setModal(null);
+    showToast(T('delete') + ' ✓');
+  }
+
   async function addExam(e) {
     if (!e.studentId || !e.date) { showToast('Pick a student and a date'); return false; }
     if (isLive) {
@@ -413,6 +518,19 @@ export function AppProvider({ children }) {
     setModal(null);
     showToast(T('save') + ' ✓');
     return true;
+  }
+
+  function setExamStatus(id, status) {
+    setExams(xs => xs.map(x => x.id === id ? { ...x, status } : x)); // optimistic
+    if (isLive) live(() => db.updateExam(id, { status }));
+    showToast(T(status === 'passed' ? 'passed_quiz' : status === 'failed' ? 'failed_quiz' : status) + ' ✓');
+  }
+
+  async function deleteExam(id) {
+    setExams(xs => xs.filter(x => x.id !== id)); // optimistic
+    if (isLive) live(() => db.deleteExam(id));
+    setModal(null);
+    showToast(T('delete') + ' ✓');
   }
 
   function markAllNotifsRead() {
@@ -480,7 +598,12 @@ export function AppProvider({ children }) {
     data: { instructors, vehicles, students, skills, payments, exams },
     platform,
     T, setLessonStatus, moveLesson, createLesson,
-    addStudent, recordPayment, addInstructor, addVehicle, addExam, updateSchoolProfile,
+    addStudent, updateStudent, deleteStudent,
+    recordPayment, deletePayment,
+    addInstructor, updateInstructor, deleteInstructor,
+    addVehicle, updateVehicle, deleteVehicle,
+    addExam, setExamStatus, deleteExam,
+    updateSchoolProfile,
   };
 
   if (booting) {

@@ -30,7 +30,10 @@ export default function Instructors() {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 3, color: C.amb }}><Icon name="star" size={13} sw={2} />{i.rating}</span>
                   </div>
                 </div>
-                <a href="tel:" onClick={e => { e.preventDefault(); showToast(T('call') + ' ' + i.phone); }} style={{ width: 38, height: 38, borderRadius: 10, background: C.grnBg, color: C.grn, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                <button onClick={() => openModal({ type: 'instructor', editId: i.id })} style={{ width: 38, height: 38, borderRadius: 10, border: 'none', background: C.priBg, color: C.pri, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  <Icon name="edit" size={17} sw={1.9} />
+                </button>
+                <a href="tel:" onClick={e => { e.preventDefault(); showToast(T('call') + ' ' + i.phone); }} style={{ width: 38, height: 38, borderRadius: 10, background: C.grnBg, color: C.grn, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', flexShrink: 0 }}>
                   <Icon name="phone" size={18} sw={1.9} />
                 </a>
               </div>

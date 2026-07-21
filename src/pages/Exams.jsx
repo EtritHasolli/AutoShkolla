@@ -23,14 +23,21 @@ export default function Exams() {
             if (!s) return null;
             const c = cols[e.status];
             return (
-              <button key={e.id} onClick={() => openStudent(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '11px 0', width: '100%', border: 'none', background: 'transparent', textAlign: 'left', borderBottom: '1px solid ' + C.line2, cursor: 'pointer' }}>
-                <Avatar name={s.name} size={36} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: C.mut }}>{new Date(e.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · {T('readiness')} {s.readiness}%</div>
-                </div>
+              <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '11px 0', borderBottom: '1px solid ' + C.line2 }}>
+                <button onClick={() => openStudent(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 13, flex: 1, minWidth: 0, border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', padding: 0 }}>
+                  <Avatar name={s.name} size={36} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{s.name}</div>
+                    <div style={{ fontSize: 12, color: C.mut }}>{new Date(e.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · {T('readiness')} {s.readiness}%</div>
+                  </div>
+                </button>
                 <Pill text={c[2]} color={c[0]} bg={c[1]} />
-              </button>
+                {!isStudent && (
+                  <button onClick={() => openModal({ type: 'exam', editId: e.id })} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'transparent', color: C.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                    <Icon name="edit" size={15} sw={1.9} />
+                  </button>
+                )}
+              </div>
             );
           }) : <EmptyRow msg="No exams" />}
         </Card>

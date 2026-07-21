@@ -105,7 +105,7 @@ function ProfOverview({ s, i, v }) {
         </Card>
         <Card>
           <div className="df-grid-2" style={{ gap: 0 }}>
-            {[[T('instructor'), i.name, i.color], [T('vehicle'), v ? v.name : '—', C.teal], ['Category', 'B — Car', C.vio], ['Joined', new Date(s.joined).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }), C.amb]].map((r, idx) => (
+            {[[T('instructor'), i ? i.name : 'Unassigned', i ? i.color : C.soft], [T('vehicle'), v ? v.name : '—', C.teal], ['Category', 'B — Car', C.vio], ['Joined', new Date(s.joined).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }), C.amb]].map((r, idx) => (
               <div key={idx} style={{ padding: '14px 16px', borderBottom: idx < 2 ? '1px solid ' + C.line2 : 'none', borderRight: idx % 2 === 0 ? '1px solid ' + C.line2 : 'none' }}>
                 <div style={{ fontSize: 11.5, color: C.mut, fontWeight: 600 }}>{r[0]}</div>
                 <div style={{ fontSize: 14.5, fontWeight: 600, color: C.ink, marginTop: 3 }}>{r[1]}</div>
@@ -199,9 +199,9 @@ function ProfPayments({ s }) {
   const hist = data.payments.filter(p => p.studentId === s.id);
   return (
     <div className="df-grid-3" style={{ gap: 14 }}>
-      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 14 }}>
+      <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
         {[[T('total_due'), euro(s.price), C.ink], [T('paid'), euro(s.paid), C.grn], [T('remaining'), euro(s.due), s.due > 0 ? C.red : C.grn]].map((r, idx) => (
-          <div key={idx} style={{ flex: 1, background: C.surf, border: '1px solid ' + C.line, borderRadius: 13, padding: '16px 18px' }}>
+          <div key={idx} style={{ flex: 1, minWidth: 140, background: C.surf, border: '1px solid ' + C.line, borderRadius: 13, padding: '16px 18px' }}>
             <div style={{ fontSize: 12.5, color: C.mut, fontWeight: 600 }}>{r[0]}</div>
             <div style={{ fontFamily: font.disp, fontSize: 26, fontWeight: 700, color: r[2], marginTop: 6 }}>{r[1]}</div>
           </div>
@@ -211,12 +211,16 @@ function ProfPayments({ s }) {
         <Card title="Payment history" extra={<button onClick={() => openModal({ type: 'payment', studentId: s.id })} style={{ display: 'flex', alignItems: 'center', gap: 6, border: 'none', background: C.pri, color: '#fff', fontSize: 12.5, fontWeight: 600, padding: '8px 13px', borderRadius: 9 }}><Icon name="plus" size={15} sw={2.2} />{T('record')}</button>}>
           {hist.length ? hist.map(p => (
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 0', borderBottom: '1px solid ' + C.line2 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 8, background: C.grnBg, color: C.grn, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="euro" size={17} sw={2} /></div>
-              <div style={{ flex: 1 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: C.grnBg, color: C.grn, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="euro" size={17} sw={2} /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{euro(p.amount)} · {T(p.method)}</div>
                 <div style={{ fontSize: 12, color: C.mut }}>{p.note}</div>
               </div>
-              <div style={{ fontFamily: font.mono, fontSize: 12.5, color: C.mut }}>{new Date(p.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
+              <div style={{ fontFamily: font.mono, fontSize: 12.5, color: C.mut, flexShrink: 0 }}>{new Date(p.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
+              <button onClick={() => openModal({ type: 'confirmDelete', kind: 'payment', id: p.id, name: euro(p.amount) + ' · ' + T(p.method) })}
+                style={{ width: 30, height: 30, borderRadius: 8, border: 'none', background: 'transparent', color: C.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                <Icon name="trash" size={15} sw={1.9} />
+              </button>
             </div>
           )) : <EmptyRow msg="No payments recorded" />}
         </Card>
@@ -297,7 +301,10 @@ function StudentProfile() {
             <span>Cat. {s.cat}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 9 }}>
+        <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+          <button onClick={() => openModal({ type: 'student', editId: s.id })} style={btnGhostStyle()}>
+            <Icon name="edit" size={16} sw={2} />{T('edit')}
+          </button>
           <button onClick={() => openModal({ type: 'payment', studentId: s.id })} style={btnGhostStyle()}>
             <Icon name="euro" size={16} sw={2} />{T('record_payment')}
           </button>

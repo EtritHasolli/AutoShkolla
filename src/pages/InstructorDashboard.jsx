@@ -31,7 +31,7 @@ function NextLessonHero({ lesson }) {
       </div>
       <div style={{ fontFamily: font.disp, fontSize: 26, fontWeight: 700, letterSpacing: '-.02em' }}>{s.name}</div>
       <div style={{ display: 'flex', gap: 18, marginTop: 10, fontSize: 13.5, color: '#dbe6fb', flexWrap: 'wrap' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="car2" size={16} sw={1.9} />{v.name} · {v.plate}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="car2" size={16} sw={1.9} />{v ? v.name + ' · ' + v.plate : 'No vehicle'}</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={15} sw={1.9} />{lesson.pickup}</span>
       </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
@@ -83,7 +83,7 @@ export default function InstructorDashboard() {
                 <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 3, background: statusColor(l.status) }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: C.mut, marginTop: 1 }}>{v.name} · {T(l.type)}</div>
+                  <div style={{ fontSize: 12, color: C.mut, marginTop: 1 }}>{v ? v.name : '—'} · {T(l.type)}</div>
                 </div>
                 <Pill text={T(l.status)} color={statusColor(l.status)} bg={statusBg(l.status)} />
               </button>

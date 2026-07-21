@@ -25,7 +25,7 @@ function LessonChip({ lesson, big, onDragStart, onDragEnd, onClick }) {
     >
       <div style={{ fontSize: big ? 13 : 12, fontWeight: 600, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
       <div style={{ fontSize: big ? 11.5 : 10.5, color: col, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>
-        {big ? (i.name + ' · ' + v.plate) : (i.name.split(' ')[0] + ' · ' + v.plate)}
+        {big ? ((i ? i.name : 'Unassigned') + ' · ' + (v ? v.plate : '—')) : ((i ? i.name.split(' ')[0] : 'Unassigned') + ' · ' + (v ? v.plate : '—'))}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Icon } from '../components/ui.jsx';
 import { C, font } from '../data/seed.js';
+import { useIsMobile } from '../hooks/useMediaQuery.js';
 
 /* ---------- helpers ---------- */
 function statusStyle(s) {
@@ -81,10 +82,10 @@ function SchoolsTable({ onOpen }) {
               </button>
             ))}
           </div>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: 200 }}>
             <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: C.mut, display: 'flex' }}><Icon name="search" size={15} sw={2} /></span>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search schools…"
-              style={{ border: '1px solid ' + C.line, background: C.bg, color: C.ink, fontSize: 13, padding: '8px 12px 8px 32px', borderRadius: 9, outline: 'none', fontFamily: font.body, width: 200 }} />
+              style={{ border: '1px solid ' + C.line, background: C.bg, color: C.ink, fontSize: 13, padding: '8px 12px 8px 32px', borderRadius: 9, outline: 'none', fontFamily: font.body, width: '100%' }} />
           </div>
         </div>
       </div>
@@ -296,61 +297,86 @@ const NAV = [
   ['schools', 'students', 'Schools'],
 ];
 
+function SidebarPanel({ nav, setNav, openId, setOpenId, logout, user, onNavigate }) {
+  return (
+    <div style={{ width: 230, maxWidth: '82vw', height: '100%', background: C.side, display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '18px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+          <Icon name="car2" size={20} sw={2} />
+        </div>
+        <div>
+          <div style={{ color: '#fff', fontFamily: font.disp, fontWeight: 700, fontSize: 16, letterSpacing: '-.02em' }}>DriveFlow</div>
+          <div style={{ color: C.sideMut, fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em', marginTop: -1 }}>SUPER ADMIN</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+        {NAV.map(([key, icon, label]) => {
+          const active = nav === key;
+          return (
+            <button key={key} onClick={() => { setNav(key); setOpenId(null); onNavigate?.(); }} style={{
+              display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 'none',
+              background: active ? C.sideActive : 'transparent', color: active ? '#fff' : C.sideMut,
+              padding: '10px 13px', borderRadius: 10, fontSize: 13.5, fontWeight: active ? 600 : 500,
+              cursor: 'pointer', textAlign: 'left', fontFamily: font.body,
+            }}>
+              <span style={{ color: active ? '#62a0ff' : C.sideMut, display: 'flex' }}><Icon name={icon} size={18} sw={1.9} /></span>
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ borderTop: '1px solid ' + C.sideLine, paddingTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '6px 8px 10px' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, fontFamily: font.disp, flexShrink: 0 }}>{(user?.name || 'PA').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#fff', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Platform admin</div>
+            <div style={{ color: C.sideMut, fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || 'platform admin'}</div>
+          </div>
+        </div>
+        <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', color: C.sideMut, padding: '9px 13px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font.body }}>
+          <Icon name="logout" size={17} sw={1.8} /> Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SuperAdmin() {
   const { logout, user } = useApp();
   const [nav, setNav] = useState('overview');
   const [openId, setOpenId] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   function openSchool(id) { setOpenId(id); setNav('schools'); }
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: font.body }}>
-      {/* Sidebar */}
-      <div style={{ width: 230, background: C.side, display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '18px 14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <Icon name="car2" size={20} sw={2} />
-          </div>
-          <div>
-            <div style={{ color: '#fff', fontFamily: font.disp, fontWeight: 700, fontSize: 16, letterSpacing: '-.02em' }}>DriveFlow</div>
-            <div style={{ color: C.sideMut, fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em', marginTop: -1 }}>SUPER ADMIN</div>
-          </div>
-        </div>
+      {/* Static sidebar on desktop */}
+      {!isMobile && <SidebarPanel nav={nav} setNav={setNav} openId={openId} setOpenId={setOpenId} logout={logout} user={user} />}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-          {NAV.map(([key, icon, label]) => {
-            const active = nav === key;
-            return (
-              <button key={key} onClick={() => { setNav(key); setOpenId(null); }} style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 'none',
-                background: active ? C.sideActive : 'transparent', color: active ? '#fff' : C.sideMut,
-                padding: '10px 13px', borderRadius: 10, fontSize: 13.5, fontWeight: active ? 600 : 500,
-                cursor: 'pointer', textAlign: 'left', fontFamily: font.body,
-              }}>
-                <span style={{ color: active ? '#62a0ff' : C.sideMut, display: 'flex' }}><Icon name={icon} size={18} sw={1.9} /></span>
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div style={{ borderTop: '1px solid ' + C.sideLine, paddingTop: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '6px 8px 10px' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, fontFamily: font.disp }}>{(user?.name || 'PA').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: '#fff', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Platform admin</div>
-              <div style={{ color: C.sideMut, fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || 'platform admin'}</div>
-            </div>
+      {/* Drawer overlay on mobile */}
+      {isMobile && drawerOpen && (
+        <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(8,12,20,.5)', backdropFilter: 'blur(2px)', display: 'flex', animation: 'df-fade .18s' }}>
+          <div onClick={e => e.stopPropagation()} style={{ height: '100%', animation: 'df-drawer .22s cubic-bezier(.2,.8,.2,1)' }}>
+            <SidebarPanel nav={nav} setNav={setNav} openId={openId} setOpenId={setOpenId} logout={logout} user={user} onNavigate={() => setDrawerOpen(false)} />
           </div>
-          <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', color: C.sideMut, padding: '9px 13px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font.body }}>
-            <Icon name="logout" size={17} sw={1.8} /> Sign out
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Content */}
-      <div style={{ flex: 1, background: C.bg, overflowY: 'auto' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '36px 32px 60px' }}>
+      <div style={{ flex: 1, background: C.bg, overflowY: 'auto', minWidth: 0 }}>
+        {isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid ' + C.line, background: C.surf, position: 'sticky', top: 0, zIndex: 5 }}>
+            <button onClick={() => setDrawerOpen(true)} style={{ border: '1px solid ' + C.line, background: C.surf, color: C.ink2, width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+              <Icon name="menu" size={19} sw={2} />
+            </button>
+            <div style={{ fontFamily: font.disp, fontWeight: 700, fontSize: 16, color: C.ink }}>DriveFlow · Super admin</div>
+          </div>
+        )}
+        <div style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '20px 16px 50px' : '36px 32px 60px' }}>
           {nav === 'overview' && <Overview onOpen={openSchool} />}
           {nav === 'schools' && (openId ? (
             <SchoolDetail id={openId} onBack={() => setOpenId(null)} />

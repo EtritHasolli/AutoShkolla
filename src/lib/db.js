@@ -154,6 +154,7 @@ export async function fetchSchool(schoolId) {
     id: data.id, name: data.name, bizNumber: data.biz_number, address: data.address,
     city: data.city, phone: data.phone, logo: data.logo_url, cats: data.cats,
     plan: data.plan, status: data.status,
+    currency: data.currency || 'EUR', workingHours: data.working_hours || '08:00 – 18:00',
   };
 }
 
@@ -199,6 +200,11 @@ async function upd(table, id, patch) {
   if (error) throw error;
 }
 
+async function del(table, id) {
+  const { error } = await supabase.from(table).delete().eq('id', id);
+  if (error) throw error;
+}
+
 export const db = {
   insertLesson: (schoolId, m) => ins('lessons', {
     school_id: schoolId, student_id: m.studentId, instructor_id: m.instructorId,
@@ -206,48 +212,61 @@ export const db = {
     type: m.type || 'city', pickup: m.pickup || 'Qendra', status: 'scheduled',
   }),
   updateLesson: (id, patch) => upd('lessons', id, patch),
-  deleteLesson: async (id) => {
-    const { error } = await supabase.from('lessons').delete().eq('id', id);
-    if (error) throw error;
-  },
+  deleteLesson: (id) => del('lessons', id),
 
   insertStudent: (schoolId, s) => ins('students', {
     school_id: schoolId, name: s.name, email: s.email || null, phone: s.phone || '',
     cat: s.cat || 'B', instructor_id: s.instructorId || null,
     total: s.total, price: s.price,
   }),
-  updateStudent: (id, patch) => upd('students', id, patch),
+  updateStudent: (id, patch) => upd('students', id, {
+    name: patch.name, email: patch.email || null, phone: patch.phone || '',
+    cat: patch.cat, instructor_id: patch.instructorId || null,
+    total: patch.total, price: patch.price,
+  }),
+  deleteStudent: (id) => del('students', id),
 
   insertPayment: (schoolId, p) => ins('payments', {
     school_id: schoolId, student_id: p.studentId, date: p.date,
     amount: p.amount, method: p.method, note: p.note || '',
   }),
+  deletePayment: (id) => del('payments', id),
 
   insertInstructor: (schoolId, i) => ins('instructors', {
     school_id: schoolId, name: i.name, email: i.email || null, phone: i.phone || '',
     cat: i.cat || 'B', color: i.color || '#2a6fdb', vehicle_id: i.vehicleId || null,
   }),
+  updateInstructor: (id, patch) => upd('instructors', id, {
+    name: patch.name, email: patch.email || null, phone: patch.phone || '',
+    cat: patch.cat, color: patch.color, vehicle_id: patch.vehicleId || null,
+  }),
+  deleteInstructor: (id) => del('instructors', id),
 
   insertVehicle: (schoolId, v) => ins('vehicles', {
     school_id: schoolId, name: v.name, plate: v.plate, cat: v.cat || 'B',
     year: v.year || null, reg: v.reg || null, ins: v.ins || null,
     km: v.km || 0, status: v.status || 'available', service: v.service || null,
   }),
+  updateVehicle: (id, patch) => upd('vehicles', id, {
+    name: patch.name, plate: patch.plate, cat: patch.cat,
+    year: patch.year || null, reg: patch.reg || null, ins: patch.ins || null,
+    km: patch.km || 0, status: patch.status || 'available', service: patch.service || null,
+  }),
+  deleteVehicle: (id) => del('vehicles', id),
 
   insertExam: (schoolId, e) => ins('exams', {
     school_id: schoolId, student_id: e.studentId, type: e.type, date: e.date,
     status: e.status || 'scheduled',
   }),
+  updateExam: (id, patch) => upd('exams', id, patch),
+  deleteExam: (id) => del('exams', id),
 
   saveCourse: async (schoolId, c, isNew) => {
     const payload = { school_id: schoolId, title: c.title, descr: c.desc, questions: c.questions };
     if (isNew) return ins('courses', payload);
     return upd('courses', c.id, payload);
   },
-  deleteCourse: async (id) => {
-    const { error } = await supabase.from('courses').delete().eq('id', id);
-    if (error) throw error;
-  },
+  deleteCourse: (id) => del('courses', id),
 
   markAllNotifsRead: async (schoolId) => {
     const { error } = await supabase.from('notifications').update({ read: true })
@@ -258,5 +277,6 @@ export const db = {
 
   updateSchool: async (id, s) => upd('schools', id, {
     name: s.name, phone: s.phone, city: s.city, address: s.address,
+    currency: s.currency, working_hours: s.workingHours,
   }),
 };

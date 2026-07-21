@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Icon, KV, Pill, btnGhostStyle, inputStyle, statusColor, statusBg, euro } from './ui.jsx';
 import { C, font } from '../data/seed.js';
+import { useIsMobile } from '../hooks/useMediaQuery.js';
 
 function ModalShell({ title, children, footer, mobile }) {
   const { closeModal } = useApp();
@@ -195,21 +196,39 @@ function PaymentModal({ mobile }) {
 }
 
 function AddStudentModal({ mobile }) {
-  const { modal, data, closeModal, addStudent, T } = useApp();
+  const { modal, data, closeModal, addStudent, updateStudent, openModal, T } = useApp();
   const m = modal;
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [instructorId, setInstructorId] = useState(m.instructorId || data.instructors[0]?.id || '');
-  const [pkg, setPkg] = useState(m.pkg || '30');
-  const [cat, setCat] = useState('B');
-  const price = pkg === '20' ? 260 : pkg === '30' ? 360 : 460;
+  const editing = data.students.find(x => x.id === m.editId);
+  const [name, setName] = useState(editing?.name || '');
+  const [phone, setPhone] = useState(editing?.phone || '');
+  const [email, setEmail] = useState(editing?.email || '');
+  const [instructorId, setInstructorId] = useState(editing?.instructorId || m.instructorId || data.instructors[0]?.id || '');
+  const [pkg, setPkg] = useState(editing ? String(editing.total) : (m.pkg || '30'));
+  const [cat, setCat] = useState(editing?.cat || 'B');
+  // Recompute from the package selector whenever it differs from the record's
+  // original total (so changing the package in edit mode updates price too);
+  // otherwise keep the record's own price (it may have been customized).
+  const price = editing && Number(pkg) === editing.total
+    ? editing.price
+    : (pkg === '20' ? 260 : pkg === '30' ? 360 : 460);
+
+  function save() {
+    const payload = { name: name.trim(), phone, email: email.trim(), instructorId: instructorId || null, total: Number(pkg), price, cat };
+    if (editing) updateStudent(editing.id, payload);
+    else addStudent(payload);
+  }
 
   return (
-    <ModalShell title={T('add_student')} mobile={mobile} footer={
+    <ModalShell title={editing ? T('edit') + ' — ' + T('students')  : T('add_student')} mobile={mobile} footer={
       <>
+        {editing && (
+          <button onClick={() => openModal({ type: 'confirmDelete', kind: 'student', id: editing.id, name: editing.name })}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid ' + C.redBg, background: C.redBg, color: C.red, fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 10, marginRight: 'auto' }}>
+            <Icon name="trash" size={15} sw={2} />{T('delete')}
+          </button>
+        )}
         <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
-        <button onClick={() => addStudent({ name: name.trim(), phone, email: email.trim(), instructorId: instructorId || null, total: Number(pkg), price, cat })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+        <button onClick={save} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
       </>
     }>
       <div style={{ display: 'flex', gap: 12 }}>
@@ -252,19 +271,32 @@ function AddStudentModal({ mobile }) {
 const INSTRUCTOR_COLORS = ['#2a6fdb', '#6557d1', '#0e8f9b', '#b9821a', '#1f8a5b', '#d6493a'];
 
 function AddInstructorModal({ mobile }) {
-  const { data, closeModal, addInstructor, T } = useApp();
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [cat, setCat] = useState('B');
-  const [color, setColor] = useState(INSTRUCTOR_COLORS[0]);
-  const [vehicleId, setVehicleId] = useState(data.vehicles[0]?.id || '');
+  const { modal, data, closeModal, addInstructor, updateInstructor, openModal, T } = useApp();
+  const editing = data.instructors.find(x => x.id === modal.editId);
+  const [name, setName] = useState(editing?.name || '');
+  const [phone, setPhone] = useState(editing?.phone || '');
+  const [email, setEmail] = useState(editing?.email || '');
+  const [cat, setCat] = useState(editing?.cat || 'B');
+  const [color, setColor] = useState(editing?.color || INSTRUCTOR_COLORS[0]);
+  const [vehicleId, setVehicleId] = useState(editing?.vehicle || data.vehicles[0]?.id || '');
+
+  function save() {
+    const payload = { name: name.trim(), phone, email: email.trim(), cat, color, vehicleId: vehicleId || null };
+    if (editing) updateInstructor(editing.id, payload);
+    else addInstructor(payload);
+  }
 
   return (
-    <ModalShell title={T('instructors')} mobile={mobile} footer={
+    <ModalShell title={editing ? T('edit') + ' — ' + T('instructors') : T('instructors')} mobile={mobile} footer={
       <>
+        {editing && (
+          <button onClick={() => openModal({ type: 'confirmDelete', kind: 'instructor', id: editing.id, name: editing.name })}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid ' + C.redBg, background: C.redBg, color: C.red, fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 10, marginRight: 'auto' }}>
+            <Icon name="trash" size={15} sw={2} />{T('delete')}
+          </button>
+        )}
         <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
-        <button onClick={() => addInstructor({ name: name.trim(), phone, email: email.trim(), cat, color, vehicleId: vehicleId || null })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+        <button onClick={save} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
       </>
     }>
       <div style={{ display: 'flex', gap: 12 }}>
@@ -304,20 +336,35 @@ function AddInstructorModal({ mobile }) {
 }
 
 function AddVehicleModal({ mobile }) {
-  const { closeModal, addVehicle, T } = useApp();
-  const [name, setName] = useState('');
-  const [plate, setPlate] = useState('');
-  const [cat, setCat] = useState('B');
-  const [year, setYear] = useState('');
-  const [reg, setReg] = useState('');
-  const [ins, setIns] = useState('');
-  const [km, setKm] = useState('');
+  const { modal, data, closeModal, addVehicle, updateVehicle, openModal, T } = useApp();
+  const editing = data.vehicles.find(x => x.id === modal.editId);
+  const [name, setName] = useState(editing?.name || '');
+  const [plate, setPlate] = useState(editing?.plate || '');
+  const [cat, setCat] = useState(editing?.cat || 'B');
+  const [year, setYear] = useState(editing?.year || '');
+  const [reg, setReg] = useState(editing?.reg || '');
+  const [ins, setIns] = useState(editing?.ins || '');
+  const [km, setKm] = useState(editing?.km || '');
+  const [status, setStatus] = useState(editing?.status || 'available');
+  const [service, setService] = useState(editing?.service || '');
+
+  function save() {
+    const payload = { name: name.trim(), plate: plate.trim(), cat, year: year ? Number(year) : null, reg: reg || null, ins: ins || null, km: km ? Number(km) : 0, status, service: service || null };
+    if (editing) updateVehicle(editing.id, payload);
+    else addVehicle(payload);
+  }
 
   return (
-    <ModalShell title={T('vehicles')} mobile={mobile} footer={
+    <ModalShell title={editing ? T('edit') + ' — ' + T('vehicles') : T('vehicles')} mobile={mobile} footer={
       <>
+        {editing && (
+          <button onClick={() => openModal({ type: 'confirmDelete', kind: 'vehicle', id: editing.id, name: editing.name })}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid ' + C.redBg, background: C.redBg, color: C.red, fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 10, marginRight: 'auto' }}>
+            <Icon name="trash" size={15} sw={2} />{T('delete')}
+          </button>
+        )}
         <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
-        <button onClick={() => addVehicle({ name: name.trim(), plate: plate.trim(), cat, year: year ? Number(year) : null, reg: reg || null, ins: ins || null, km: km ? Number(km) : 0 })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+        <button onClick={save} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
       </>
     }>
       <div style={{ display: 'flex', gap: 12 }}>
@@ -333,15 +380,25 @@ function AddVehicleModal({ mobile }) {
         <div style={{ flex: 1 }}><ModalField label="Registration until"><input type="date" value={reg} onChange={e => setReg(e.target.value)} style={inputStyle()} /></ModalField></div>
         <div style={{ flex: 1 }}><ModalField label="Insurance until"><input type="date" value={ins} onChange={e => setIns(e.target.value)} style={inputStyle()} /></ModalField></div>
       </div>
+      <ModalField label="Next service"><input type="date" value={service} onChange={e => setService(e.target.value)} style={inputStyle()} /></ModalField>
+      <ModalField label={T('status')}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[['available', T('available')], ['in_use', T('in_use')], ['maintenance', T('maintenance')]].map(([v, l]) => (
+            <button key={v} onClick={() => setStatus(v)} style={{ flex: 1, border: '1px solid ' + (status === v ? C.pri : C.line), background: status === v ? C.priBg : C.surf, color: status === v ? C.pri : C.ink2, fontSize: 12, fontWeight: 600, padding: '9px 4px', borderRadius: 9 }}>{l}</button>
+          ))}
+        </div>
+      </ModalField>
     </ModalShell>
   );
 }
 
 function AddExamModal({ mobile }) {
-  const { modal, data, closeModal, addExam, T } = useApp();
-  const [studentId, setStudentId] = useState(modal.studentId || data.students[0]?.id || '');
-  const [type, setType] = useState('theory');
-  const [date, setDate] = useState(todayISO());
+  const { modal, data, closeModal, addExam, setExamStatus, openModal, T } = useApp();
+  const editing = data.exams.find(x => x.id === modal.editId);
+  const [studentId, setStudentId] = useState(editing?.studentId || modal.studentId || data.students[0]?.id || '');
+  const [type, setType] = useState(editing?.type || 'theory');
+  const [date, setDate] = useState(editing?.date || todayISO());
+  const [status, setStatus] = useState(editing?.status || 'scheduled');
 
   if (!data.students.length) {
     return (
@@ -351,16 +408,27 @@ function AddExamModal({ mobile }) {
     );
   }
 
+  function save() {
+    if (editing) { setExamStatus(editing.id, status); closeModal(); }
+    else addExam({ studentId, type, date });
+  }
+
   return (
-    <ModalShell title={T('exams')} mobile={mobile} footer={
+    <ModalShell title={editing ? T('edit') + ' — ' + T('exams') : T('exams')} mobile={mobile} footer={
       <>
+        {editing && (
+          <button onClick={() => openModal({ type: 'confirmDelete', kind: 'exam', id: editing.id, name: data.students.find(s => s.id === editing.studentId)?.name || '' })}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid ' + C.redBg, background: C.redBg, color: C.red, fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 10, marginRight: 'auto' }}>
+            <Icon name="trash" size={15} sw={2} />{T('delete')}
+          </button>
+        )}
         <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
-        <button onClick={() => addExam({ studentId, type, date })} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
+        <button onClick={save} style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('save')}</button>
       </>
     }>
       <ModalField label={T('student')}>
         <div style={{ position: 'relative' }}>
-          <select value={studentId} onChange={e => setStudentId(e.target.value)} style={{ ...inputStyle(), appearance: 'none', cursor: 'pointer', fontWeight: 600, paddingRight: 32 }}>
+          <select value={studentId} onChange={e => setStudentId(e.target.value)} disabled={!!editing} style={{ ...inputStyle(), appearance: 'none', cursor: editing ? 'default' : 'pointer', fontWeight: 600, paddingRight: 32, opacity: editing ? 0.7 : 1 }}>
             {data.students.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}
           </select>
           <span style={{ position: 'absolute', right: 11, top: 12, color: C.mut, pointerEvents: 'none' }}><Icon name="chevR" size={14} sw={2.2} /></span>
@@ -371,16 +439,51 @@ function AddExamModal({ mobile }) {
           <ModalField label="Type">
             <div style={{ display: 'flex', gap: 8 }}>
               {[['theory', T('theory')], ['practical', T('practical')]].map(([v, l]) => (
-                <button key={v} onClick={() => setType(v)} style={{ flex: 1, border: '1px solid ' + (type === v ? C.pri : C.line), background: type === v ? C.priBg : C.surf, color: type === v ? C.pri : C.ink2, fontSize: 12.5, fontWeight: 600, padding: '9px 4px', borderRadius: 9 }}>{l}</button>
+                <button key={v} disabled={!!editing} onClick={() => setType(v)} style={{ flex: 1, border: '1px solid ' + (type === v ? C.pri : C.line), background: type === v ? C.priBg : C.surf, color: type === v ? C.pri : C.ink2, fontSize: 12.5, fontWeight: 600, padding: '9px 4px', borderRadius: 9, opacity: editing ? 0.7 : 1 }}>{l}</button>
               ))}
             </div>
           </ModalField>
         </div>
         <div style={{ flex: 1 }}>
           <ModalField label={T('date')}>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle()} />
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={!!editing} style={{ ...inputStyle(), opacity: editing ? 0.7 : 1 }} />
           </ModalField>
         </div>
+      </div>
+      {editing && (
+        <ModalField label={T('status')}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[['scheduled', T('scheduled')], ['passed', T('passed')], ['failed', T('failed')]].map(([v, l]) => (
+              <button key={v} onClick={() => setStatus(v)} style={{ flex: 1, border: '1px solid ' + (status === v ? statusColor(v) : C.line), background: status === v ? statusBg(v) : C.surf, color: status === v ? statusColor(v) : C.ink2, fontSize: 12.5, fontWeight: 600, padding: '9px 4px', borderRadius: 9 }}>{l}</button>
+            ))}
+          </div>
+        </ModalField>
+      )}
+    </ModalShell>
+  );
+}
+
+function ConfirmDeleteModal({ mobile }) {
+  const { modal, closeModal, deleteStudent, deleteInstructor, deleteVehicle, deletePayment, deleteExam, T } = useApp();
+  const { kind, id, name } = modal;
+  const actions = {
+    student: deleteStudent, instructor: deleteInstructor, vehicle: deleteVehicle,
+    payment: deletePayment, exam: deleteExam,
+  };
+  const labels = {
+    student: T('students'), instructor: T('instructors'), vehicle: T('vehicles'),
+    payment: T('payment'), exam: T('exams'),
+  };
+
+  return (
+    <ModalShell title={T('delete') + ' ' + labels[kind]} mobile={mobile} footer={
+      <>
+        <button onClick={closeModal} style={btnGhostStyle()}>{T('cancel')}</button>
+        <button onClick={() => actions[kind](id)} style={{ border: 'none', background: C.red, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10 }}>{T('delete')}</button>
+      </>
+    }>
+      <div style={{ fontSize: 13.5, color: C.ink2, lineHeight: 1.6 }}>
+        {name ? <>Delete <strong>{name}</strong>? This cannot be undone.</> : 'Delete this record? This cannot be undone.'}
       </div>
     </ModalShell>
   );
@@ -388,8 +491,8 @@ function AddExamModal({ mobile }) {
 
 export default function Modal() {
   const { modal } = useApp();
+  const mobile = useIsMobile(640);
   if (!modal) return null;
-  const mobile = window.innerWidth < 640;
   if (modal.type === 'lessonView') return <LessonViewModal mobile={mobile} />;
   if (modal.type === 'lesson') return <NewLessonModal mobile={mobile} />;
   if (modal.type === 'payment') return <PaymentModal mobile={mobile} />;
@@ -397,5 +500,6 @@ export default function Modal() {
   if (modal.type === 'instructor') return <AddInstructorModal mobile={mobile} />;
   if (modal.type === 'vehicle') return <AddVehicleModal mobile={mobile} />;
   if (modal.type === 'exam') return <AddExamModal mobile={mobile} />;
+  if (modal.type === 'confirmDelete') return <ConfirmDeleteModal mobile={mobile} />;
   return null;
 }

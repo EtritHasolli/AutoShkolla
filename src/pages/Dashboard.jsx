@@ -86,7 +86,7 @@ export default function Dashboard() {
                 <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 3, background: statusColor(l.status) }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: C.mut, marginTop: 1 }}>{i.name} · {v.name}</div>
+                  <div style={{ fontSize: 12, color: C.mut, marginTop: 1 }}>{i ? i.name : 'Unassigned'} · {v ? v.name : '—'}</div>
                 </div>
                 <Pill text={T(l.status)} color={statusColor(l.status)} bg={statusBg(l.status)} />
               </button>
@@ -142,7 +142,7 @@ export default function Dashboard() {
                   <Avatar name={s.name} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: C.mut }}>{i.name} · {s.used}/{s.total} {T('lessons').toLowerCase()}</div>
+                    <div style={{ fontSize: 12, color: C.mut }}>{i ? i.name : 'Unassigned'} · {s.used}/{s.total} {T('lessons').toLowerCase()}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 600, color: C.red }}>{euro(s.due)}</div>

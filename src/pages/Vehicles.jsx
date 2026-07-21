@@ -49,11 +49,14 @@ export default function Vehicles() {
                 <div style={{ width: 48, height: 48, borderRadius: 11, background: C.priBg, color: C.pri, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="car2" size={26} sw={1.8} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: font.disp, fontSize: 16.5, fontWeight: 700, color: C.ink }}>{v.name}</div>
                   <div style={{ fontFamily: font.mono, fontSize: 12.5, color: C.mut, marginTop: 1 }}>{v.plate} · {v.year} · {v.km.toLocaleString('de-DE')} km</div>
                 </div>
                 <Pill text={sm[2]} color={sm[0]} bg={sm[1]} />
+                <button onClick={() => openModal({ type: 'vehicle', editId: v.id })} style={{ width: 34, height: 34, borderRadius: 9, border: 'none', background: C.priBg, color: C.pri, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                  <Icon name="edit" size={16} sw={1.9} />
+                </button>
               </div>
               <div style={{ display: 'flex', gap: 12, padding: '16px 20px' }}>
                 <Expiry label="Insurance" date={v.ins} />
