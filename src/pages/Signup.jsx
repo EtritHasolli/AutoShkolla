@@ -16,7 +16,7 @@ const STEPS = [
 function Logo() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-      <div style={{ width: 44, height: 44, borderRadius: 13, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 8px 20px -6px rgba(42,111,219,.6)' }}>
+      <div style={{ width: 44, height: 44, borderRadius: 13, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 8px 20px -6px rgba(15,157,107,.6)' }}>
         <Icon name="car2" size={24} sw={2} />
       </div>
       <div>
@@ -86,7 +86,7 @@ function NavRow({ step, onBack, onNext, nextLabel = 'Continue', disabled = false
           <Icon name="chevL" size={15} sw={2} />
         </button>
       )}
-      <button onClick={onNext} disabled={disabled} style={{ flex: 1, border: 'none', background: disabled ? C.line : 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: disabled ? C.mut : '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12, cursor: disabled ? 'not-allowed' : 'pointer', boxShadow: disabled ? 'none' : '0 10px 24px -8px rgba(42,111,219,.55)', fontFamily: font.body, transition: 'all .2s' }}>
+      <button onClick={onNext} disabled={disabled} style={{ flex: 1, border: 'none', background: disabled ? C.line : '#0f9d6b', color: disabled ? C.mut : '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12, cursor: disabled ? 'not-allowed' : 'pointer', boxShadow: disabled ? 'none' : '0 10px 24px -8px rgba(15,157,107,.55)', fontFamily: font.body, transition: 'all .2s' }}>
         {nextLabel}
       </button>
     </div>
@@ -157,7 +157,7 @@ export default function Signup() {
   const canStep3 = cats.length > 0;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0e1219 0%,#141c2b 60%,#1a1f2e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0e1a15 0%,#13251d 55%,#1a3327 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 440, background: '#fff', borderRadius: 22, padding: '36px 36px 32px', boxShadow: '0 40px 80px -20px rgba(0,0,0,.55)' }}>
         <Logo />
         <StepBar step={step} />

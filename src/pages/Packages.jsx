@@ -30,11 +30,11 @@ export default function Packages() {
               <span style={{ fontFamily: font.disp, fontSize: 40, fontWeight: 700, letterSpacing: '-.03em' }}>{p.n}</span>
               <span style={{ fontSize: 15, color: p.pop ? '#9fb4d6' : C.mut, fontWeight: 600 }}>lessons</span>
             </div>
-            <div style={{ fontFamily: font.disp, fontSize: 24, fontWeight: 700, color: p.pop ? '#62a0ff' : C.pri, marginBottom: 18 }}>{euro(p.price)}</div>
+            <div style={{ fontFamily: font.disp, fontSize: 24, fontWeight: 700, color: p.pop ? '#34d399' : C.pri, marginBottom: 18 }}>{euro(p.price)}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {p.feat.map((f, idx) => (
                 <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13.5, color: p.pop ? '#d6dfec' : C.ink2 }}>
-                  <span style={{ color: p.pop ? '#62a0ff' : C.grn, display: 'flex' }}><Icon name="check" size={16} sw={2.4} /></span>
+                  <span style={{ color: p.pop ? '#34d399' : C.grn, display: 'flex' }}><Icon name="check" size={16} sw={2.4} /></span>
                   {f}
                 </div>
               ))}

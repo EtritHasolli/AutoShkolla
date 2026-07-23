@@ -45,11 +45,11 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0e1219 0%,#141c2b 60%,#1a1f2e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0e1a15 0%,#13251d 55%,#1a3327 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 22, padding: '40px 36px', boxShadow: '0 40px 80px -20px rgba(0,0,0,.55)' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 8px 20px -6px rgba(42,111,219,.6)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 13, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 8px 20px -6px rgba(15,157,107,.6)' }}>
             <Icon name="car2" size={24} sw={2} />
           </div>
           <div>
@@ -109,9 +109,9 @@ export default function Login() {
         <div style={{ height: error ? 0 : 16 }} />
 
         <button onClick={handleSignIn} disabled={busy} style={{
-          width: '100%', border: 'none', background: busy ? C.line : 'linear-gradient(135deg,#2a6fdb,#6557d1)',
+          width: '100%', border: 'none', background: busy ? C.line : '#0f9d6b',
           color: busy ? C.mut : '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12,
-          cursor: busy ? 'wait' : 'pointer', boxShadow: busy ? 'none' : '0 10px 24px -8px rgba(42,111,219,.55)', fontFamily: font.body,
+          cursor: busy ? 'wait' : 'pointer', boxShadow: busy ? 'none' : '0 10px 24px -8px rgba(15,157,107,.55)', fontFamily: font.body,
         }}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>

@@ -128,7 +128,7 @@ export default function Calendar() {
                   onDragOver={e => e.preventDefault()}
                   onDrop={e => { e.preventDefault(); if (dragId) moveLesson(dragId, d, hr); }}
                   onClick={() => { if (!ls.length) openModal({ type: 'lesson', day: d, hour: hr, studentId: data.students[0]?.id, instructorId: data.instructors[0]?.id, vehicleId: data.vehicles[0]?.id, ltype: 'city' }); }}
-                  style={{ borderTop: '1px solid ' + C.line2, borderLeft: '1px solid ' + C.line2, padding: 3, position: 'relative', cursor: ls.length ? 'default' : 'pointer', background: d === todayIdx ? 'rgba(42,111,219,.022)' : 'transparent' }}>
+                  style={{ borderTop: '1px solid ' + C.line2, borderLeft: '1px solid ' + C.line2, padding: 3, position: 'relative', cursor: ls.length ? 'default' : 'pointer', background: d === todayIdx ? 'rgba(15,157,107,.022)' : 'transparent' }}>
                   {ls.map(l => (
                     <LessonChip key={l.id} lesson={l} big={effView === 'day'}
                       onDragStart={() => setDragId(l.id)}

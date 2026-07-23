@@ -58,7 +58,7 @@ export function AppProvider({ children }) {
   const [studentTab, setStudentTab] = useState('overview');
   const [payFilter, setPayFilter] = useState('all');
   const [dragId, setDragId] = useState(null);
-  const [accent, setAccent] = useState('#2a6fdb');
+  const [accent, setAccent] = useState('#0f9d6b');
   const toastTimer = useRef(null);
   const refreshTimer = useRef(null);
   const schoolIdRef = useRef(null);
@@ -109,6 +109,21 @@ export function AppProvider({ children }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Demo mode: restore a previously saved local session on reload.
+  useEffect(() => {
+    if (isLive) return;
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem('driveflow-demo-session') || 'null'); } catch { saved = null; }
+    if (!saved) return;
+    if (saved.portal === 'superadmin') {
+      setUser({ role: 'superadmin', email: DEMO_EMAIL });
+      setPortal('superadmin');
+      setIsLoggedIn(true);
+    } else if (saved.role) {
+      loginSchool(saved.role, DEMO_EMAIL);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Public school directory for the landing page (works anonymously)
   useEffect(() => {
@@ -198,6 +213,16 @@ export function AppProvider({ children }) {
     instructor: 'instructor', student: 'student',
   };
 
+  // Demo mode has no backend, so persist the signed-in role/portal locally to
+  // keep the user logged in across reloads (live mode uses Supabase for this).
+  const DEMO_SESSION_KEY = 'driveflow-demo-session';
+  function saveDemoSession(s) {
+    try { localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  }
+  function clearDemoSession() {
+    try { localStorage.removeItem(DEMO_SESSION_KEY); } catch { /* ignore */ }
+  }
+
   async function authenticate(email, password) {
     if (isLive) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -214,8 +239,10 @@ export function AppProvider({ children }) {
       setUser({ role: 'superadmin', email: DEMO_EMAIL });
       setPortal('superadmin');
       setIsLoggedIn(true);
+      saveDemoSession({ portal: 'superadmin', role: 'superadmin' });
     } else {
       loginSchool(r, DEMO_EMAIL);
+      saveDemoSession({ portal: 'school', role: r });
     }
     return { ok: true };
   }
@@ -264,6 +291,7 @@ export function AppProvider({ children }) {
 
   async function logout() {
     if (isLive) await supabase.auth.signOut();
+    else clearDemoSession();
     schoolIdRef.current = null;
     setIsLoggedIn(false);
     setUser(null);
@@ -445,7 +473,7 @@ export function AppProvider({ children }) {
     }
     setInstructors(xs => [...xs, {
       id: uid('i'), name: i.name, cat: i.cat || 'B', phone: i.phone || '',
-      color: i.color || '#2a6fdb', rating: 5.0, students: 0, vehicle: i.vehicleId || null, email: i.email || '',
+      color: i.color || '#0f9d6b', rating: 5.0, students: 0, vehicle: i.vehicleId || null, email: i.email || '',
     }]);
     setModal(null);
     showToast(T('save') + ' ✓');
@@ -625,9 +653,9 @@ export function AppProvider({ children }) {
 
   if (booting) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#0e1219 0%,#141c2b 60%,#1a1f2e 100%)', fontFamily: font.body }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#0e1a15 0%,#13251d 55%,#1a3327 100%)', fontFamily: font.body }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 52, height: 52, margin: '0 auto 14px', borderRadius: 15, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: font.disp, fontWeight: 700, fontSize: 22 }}>D</div>
+          <div style={{ width: 52, height: 52, margin: '0 auto 14px', borderRadius: 15, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: font.disp, fontWeight: 700, fontSize: 22 }}>D</div>
           <div style={{ color: '#8d97a8', fontSize: 13, fontWeight: 600 }}>Loading DriveFlow…</div>
         </div>
       </div>

@@ -77,7 +77,7 @@ function EnrollModal({ school, onClose }) {
         )}
 
         <button onClick={submit} disabled={busy} style={{
-          width: '100%', border: 'none', background: busy ? C.line : 'linear-gradient(135deg,#2a6fdb,#6557d1)',
+          width: '100%', border: 'none', background: busy ? C.line : '#0f9d6b',
           color: busy ? C.mut : '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12,
           cursor: busy ? 'wait' : 'pointer', fontFamily: font.body, marginTop: 4,
         }}>
@@ -94,7 +94,7 @@ function SchoolCard({ s, onEnroll, onOpen }) {
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 16px 40px -18px rgba(10,20,40,.25)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-        <div style={{ width: 46, height: 46, borderRadius: 12, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#0f9d6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
           {s.logo ? <img src={s.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Icon name="car2" size={24} sw={1.9} />}
         </div>
         <div style={{ minWidth: 0 }}>
@@ -134,13 +134,13 @@ const ALL_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 function SchoolDetail({ school: s, onBack, onEnroll }) {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: font.body }}>
-      <div style={{ background: 'linear-gradient(135deg,#0e1219 0%,#141c2b 60%,#1a1f2e 100%)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#0e1a15 0%,#13251d 55%,#1a3327 100%)' }}>
         <div style={{ maxWidth: 860, margin: '0 auto', padding: '18px 24px 46px' }}>
           <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid rgba(255,255,255,.18)', background: 'transparent', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontFamily: font.body, marginBottom: 20 }}>
             <Icon name="chevL" size={15} sw={2} /> Back to directory
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ width: 62, height: 62, borderRadius: 16, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+            <div style={{ width: 62, height: 62, borderRadius: 16, background: '#0f9d6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
               {s.logo ? <img src={s.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Icon name="car2" size={30} sw={1.9} />}
             </div>
             <div>
@@ -249,10 +249,10 @@ export default function Landing() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, fontFamily: font.body }}>
       {/* Top bar */}
-      <div style={{ background: 'linear-gradient(135deg,#0e1219 0%,#141c2b 60%,#1a1f2e 100%)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#0e1a15 0%,#13251d 55%,#1a3327 100%)' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', padding: '18px 0', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               <Icon name="car2" size={22} sw={2} />
             </div>
             <div style={{ flex: 1 }}>
@@ -262,7 +262,7 @@ export default function Landing() {
             <button onClick={() => setAuthScreen('login')} style={{ border: '1px solid rgba(255,255,255,.18)', background: 'transparent', color: '#fff', fontSize: 13.5, fontWeight: 600, padding: '9px 18px', borderRadius: 10, cursor: 'pointer', fontFamily: font.body }}>
               Sign in
             </button>
-            <button onClick={() => setAuthScreen('signup')} style={{ border: 'none', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', fontSize: 13.5, fontWeight: 700, padding: '10px 18px', borderRadius: 10, cursor: 'pointer', fontFamily: font.body, boxShadow: '0 8px 20px -8px rgba(42,111,219,.6)' }}>
+            <button onClick={() => setAuthScreen('signup')} style={{ border: 'none', background: '#0f9d6b', color: '#fff', fontSize: 13.5, fontWeight: 700, padding: '10px 18px', borderRadius: 10, cursor: 'pointer', fontFamily: font.body, boxShadow: '0 8px 20px -8px rgba(15,157,107,.6)' }}>
               Register your school
             </button>
           </div>

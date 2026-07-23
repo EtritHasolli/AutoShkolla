@@ -1,13 +1,21 @@
 export const C = {
-  ink: '#0f141b', ink2: '#3a4453', mut: '#7c8694', soft: '#9aa3b1',
-  line: '#e6eaf1', line2: '#eef1f7', bg: '#eef1f6', surf: '#ffffff',
-  side: '#0e1219', sidePanel: '#141a23', sideMut: '#8d97a8', sideLine: '#202833', sideActive: '#1b2330',
-  pri: '#2a6fdb', priD: '#1f59bd', priBg: '#e9f1fd', priSoft: '#f3f8fe',
-  grn: '#1f8a5b', grnBg: '#e5f3ec',
-  amb: '#b9821a', ambBg: '#f6eed9',
-  red: '#d6493a', redBg: '#fbe8e5',
-  vio: '#6557d1', vioBg: '#eae8fa',
-  teal: '#0e8f9b', tealBg: '#e2f2f3',
+  // Text
+  ink: '#0f1a17', ink2: '#39473f', mut: '#6d7a72', soft: '#95a19a',
+  // Surfaces & lines
+  line: '#e5eae7', line2: '#eef2f0', bg: '#f3f6f4', surf: '#ffffff',
+  // Sidebar — deep neutral green-slate (single hue, no gradient)
+  side: '#0e1a15', sidePanel: '#14231c', sideMut: '#899a91', sideLine: '#213028', sideActive: '#17281f',
+  // Primary — solid emerald (brand identity)
+  pri: '#0f9d6b', priD: '#0b7f56', priBg: '#e2f4ec', priSoft: '#f2faf6',
+  // Accents
+  grn: '#1a8f5f', grnBg: '#e3f3ea',
+  amb: '#c07d12', ambBg: '#f8eed7',
+  red: '#e0463f', redBg: '#fce8e6',
+  vio: '#6d5cd6', vioBg: '#ebe8fa',
+  teal: '#0b8ea6', tealBg: '#def0f3',
+  // Brand — single solid emerald (no gradient blend)
+  grad: '#0f9d6b',
+  gradSoft: '#12b47b',
 };
 
 export const font = {

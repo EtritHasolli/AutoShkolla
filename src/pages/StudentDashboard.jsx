@@ -23,7 +23,7 @@ function NextLessonHero({ lesson }) {
   if (!i) return null;
   const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][lesson.day];
   return (
-    <div style={{ background: 'linear-gradient(140deg,#2a6fdb,#3858c8 60%,#6557d1)', borderRadius: 18, padding: '22px 24px', color: '#fff', boxShadow: '0 18px 40px -18px rgba(42,111,219,.6)' }}>
+    <div style={{ background: '#0f9d6b', borderRadius: 18, padding: '22px 24px', color: '#fff', boxShadow: '0 18px 40px -18px rgba(15,157,107,.6)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: '#cfe0fb', letterSpacing: '.05em', textTransform: 'uppercase' }}>{T('nextL')}</span>
         <span style={{ background: 'rgba(255,255,255,.18)', padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: font.mono }}>{dayName} · {String(lesson.hour).padStart(2, '0')}:00</span>

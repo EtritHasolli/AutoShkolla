@@ -6,7 +6,7 @@ import { useIsMobile } from '../hooks/useMediaQuery.js';
 
 function Metric({ label, val, sub, icon, color, bg }) {
   return (
-    <div style={{ flex: 1, minWidth: 180, background: C.surf, border: '1px solid ' + C.line, borderRadius: 15, padding: '17px 18px' }}>
+    <div style={{ flex: 1, minWidth: 180, background: C.surf, border: '1px solid ' + C.line, borderRadius: 15, padding: '17px 18px', boxShadow: '0 1px 2px rgba(40,40,90,.04), 0 8px 24px -18px rgba(40,40,90,.28)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 12.5, fontWeight: 600, color: C.mut }}>{label}</div>
         <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -21,7 +21,7 @@ function Metric({ label, val, sub, icon, color, bg }) {
 
 function Card({ title, extra, children }) {
   return (
-    <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 1px 2px rgba(40,40,90,.04), 0 8px 24px -18px rgba(40,40,90,.24)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid ' + C.line2 }}>
         <div style={{ fontFamily: font.disp, fontWeight: 600, fontSize: 15.5, color: C.ink }}>{title}</div>
         {extra}

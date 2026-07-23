@@ -8,7 +8,7 @@ function Seg({ options, value, onChange }) {
       {options.map(o => (
         <button key={o.v} onClick={() => onChange(o.v)} style={{
           display: 'flex', alignItems: 'center', gap: 6, border: 'none',
-          background: value === o.v ? '#2a6fdb' : 'transparent',
+          background: value === o.v ? '#0f9d6b' : 'transparent',
           color: value === o.v ? '#fff' : '#aeb7c6',
           fontSize: 12.5, fontWeight: 600, padding: '6px 11px', borderRadius: 7, transition: 'all .15s',
         }}>
@@ -30,7 +30,7 @@ export default function TopControls() {
       gap: 16, flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 50,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        <div style={{ width: 26, height: 26, borderRadius: 7, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
           <Icon name="car2" size={16} sw={2} />
         </div>
         <span style={{ color: '#fff', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 15, letterSpacing: '-.01em' }}>DriveFlow</span>

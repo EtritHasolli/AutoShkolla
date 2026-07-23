@@ -268,7 +268,7 @@ function AddStudentModal({ mobile }) {
   );
 }
 
-const INSTRUCTOR_COLORS = ['#2a6fdb', '#6557d1', '#0e8f9b', '#b9821a', '#1f8a5b', '#d6493a'];
+const INSTRUCTOR_COLORS = ['#0f9d6b', '#0b8ea6', '#6d5cd6', '#c07d12', '#2563c9', '#e0463f'];
 
 function AddInstructorModal({ mobile }) {
   const { modal, data, closeModal, addInstructor, updateInstructor, openModal, T } = useApp();

@@ -239,7 +239,7 @@ export const db = {
 
   insertInstructor: (schoolId, i) => ins('instructors', {
     school_id: schoolId, name: i.name, email: i.email || null, phone: i.phone || '',
-    cat: i.cat || 'B', color: i.color || '#2a6fdb', vehicle_id: i.vehicleId || null,
+    cat: i.cat || 'B', color: i.color || '#0f9d6b', vehicle_id: i.vehicleId || null,
   }),
   updateInstructor: (id, patch) => upd('instructors', id, {
     name: patch.name, email: patch.email || null, phone: patch.phone || '',

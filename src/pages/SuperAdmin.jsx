@@ -221,7 +221,7 @@ function SchoolDetail({ id, onBack }) {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 15, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 15, background: '#0f9d6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Icon name="car2" size={28} sw={1.9} />
         </div>
         <div style={{ flex: 1 }}>
@@ -304,7 +304,7 @@ function SidebarPanel({ nav, setNav, openId, setOpenId, logout, user, onNavigate
   return (
     <div style={{ width: 230, maxWidth: '82vw', height: '100%', background: C.side, display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '18px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
           <Icon name="car2" size={20} sw={2} />
         </div>
         <div>
@@ -323,7 +323,7 @@ function SidebarPanel({ nav, setNav, openId, setOpenId, logout, user, onNavigate
               padding: '10px 13px', borderRadius: 10, fontSize: 13.5, fontWeight: active ? 600 : 500,
               cursor: 'pointer', textAlign: 'left', fontFamily: font.body,
             }}>
-              <span style={{ color: active ? '#62a0ff' : C.sideMut, display: 'flex' }}><Icon name={icon} size={18} sw={1.9} /></span>
+              <span style={{ color: active ? '#34d399' : C.sideMut, display: 'flex' }}><Icon name={icon} size={18} sw={1.9} /></span>
               {label}
             </button>
           );
@@ -332,7 +332,7 @@ function SidebarPanel({ nav, setNav, openId, setOpenId, logout, user, onNavigate
 
       <div style={{ borderTop: '1px solid ' + C.sideLine, paddingTop: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '6px 8px 10px' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, fontFamily: font.disp, flexShrink: 0 }}>{(user?.name || 'PA').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#0f9d6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, fontFamily: font.disp, flexShrink: 0 }}>{(user?.name || 'PA').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ color: '#fff', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Platform admin</div>
             <div style={{ color: C.sideMut, fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || 'platform admin'}</div>

@@ -82,9 +82,17 @@ function AppInner() {
 function Shell() {
   const { isLoggedIn, portal, authScreen } = useApp();
   if (!isLoggedIn) {
-    if (authScreen === 'signup') return <Signup />;
-    if (authScreen === 'login') return <Login />;
-    return <Landing />;
+    // Pre-auth screens render directly under #root (which is overflow:hidden),
+    // so give them their own scroll container.
+    let screen;
+    if (authScreen === 'signup') screen = <Signup />;
+    else if (authScreen === 'login') screen = <Login />;
+    else screen = <Landing />;
+    return (
+      <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        {screen}
+      </div>
+    );
   }
   if (portal === 'superadmin') return <SuperAdmin />;
   return <AppInner />;

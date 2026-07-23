@@ -51,7 +51,7 @@ export default function Sidebar({ asDrawer = false }) {
         padding: '10px 13px', borderRadius: 10, fontSize: 13.5, fontWeight: active ? 600 : 500,
         position: 'relative', transition: 'all .14s', textAlign: 'left', cursor: 'pointer',
       }}>
-        <span style={{ color: active ? '#62a0ff' : C.sideMut, display: 'flex' }}>
+        <span style={{ color: active ? '#34d399' : C.sideMut, display: 'flex' }}>
           <Icon name={icon} size={18} sw={1.9} />
         </span>
         <span style={{ flex: 1 }}>{T(routeKey)}</span>
@@ -60,7 +60,7 @@ export default function Sidebar({ asDrawer = false }) {
             {badge}
           </span>
         ) : null}
-        {active ? <span style={{ position: 'absolute', left: 0, top: 9, bottom: 9, width: 3, background: '#62a0ff', borderRadius: 3 }} /> : null}
+        {active ? <span style={{ position: 'absolute', left: 0, top: 9, bottom: 9, width: 3, background: '#34d399', borderRadius: 3 }} /> : null}
       </button>
     );
   }
@@ -68,7 +68,7 @@ export default function Sidebar({ asDrawer = false }) {
   const panel = (
     <div style={{ width: 248, maxWidth: '82vw', height: '100%', background: C.side, display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '18px 14px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 18px' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 6px 16px -4px rgba(42,111,219,.6)', overflow: 'hidden' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 6px 16px -4px rgba(15,157,107,.6)', overflow: 'hidden' }}>
           {school?.logo
             ? <img src={school.logo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : <Icon name="car2" size={20} sw={2} />}
@@ -91,7 +91,7 @@ export default function Sidebar({ asDrawer = false }) {
       <div style={{ borderTop: '1px solid ' + C.sideLine, paddingTop: 12, marginTop: 8 }}>
         {showSettings && <NavItem routeKey="settings" icon="settings" />}
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 10px 4px', marginTop: 6 }}>
-          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg,#2a6fdb,#6557d1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, fontFamily: font.disp }}>
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#0f9d6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, fontFamily: font.disp }}>
             {initials}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>

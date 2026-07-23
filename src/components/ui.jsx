@@ -87,7 +87,7 @@ export function ProgressBar({ val, max, color, h: height = 7 }) {
 
 export function Card({ title, extra, children }) {
   return (
-    <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 2px rgba(40,40,90,.04), 0 6px 20px -14px rgba(40,40,90,.22)' }}>
       {title != null && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid ' + C.line2 }}>
           <div style={{ fontFamily: font.disp, fontWeight: 600, fontSize: 14.5, color: C.ink }}>{title}</div>
