@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { avatarTone, initials } from '../lib/format.js';
 import { BRAND } from '../lib/brand.js';
 
@@ -326,7 +327,9 @@ export function Dialog({ title, onClose, children, footer, size, sheet = true })
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  return (
+  // Rendered into <body> so a parent with backdrop-filter/transform (e.g. the
+  // sticky site header) can't become its containing block and trap it.
+  return createPortal(
     <div className={'overlay' + (sheet ? ' sheetable' : '')} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
       <div className={'dialog' + (size === 'lg' ? ' dialog-lg' : '')} role="dialog" aria-modal="true">
         <div className="sheet-handle" />
@@ -337,7 +340,8 @@ export function Dialog({ title, onClose, children, footer, size, sheet = true })
         <div className="dialog-body">{children}</div>
         {footer && <div className="dialog-foot">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
