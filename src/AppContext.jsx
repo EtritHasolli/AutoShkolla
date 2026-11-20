@@ -12,8 +12,6 @@ import { Capacitor } from '@capacitor/core';
 
 const AppContext = createContext(null);
 
-// The designated test account: sees the "View as" switcher (Settings).
-export const DEV_EMAIL = 'you@example.com';
 // Offline demo login (no backend): any email, the password picks the role.
 const DEMO_PASSWORDS = { superadmin: 'superadmin', owner: 'owner', admin: 'administrator', administrator: 'administrator', receptionist: 'receptionist', instructor: 'instructor', student: 'student' };
 
@@ -317,7 +315,9 @@ export function AppProvider({ children }) {
     navigate({ screen: 'landing' }, { replace: true });
   }
 
-  const isDevAccount = (user?.email || '').toLowerCase() === DEV_EMAIL;
+  // Platform admins (profiles.role = 'superadmin', set with promote_to_superadmin)
+  // can preview the app as any role. The database still enforces their access.
+  const isDevAccount = user?.role === 'superadmin';
   function devSwitchView(v) {
     if (v === 'superadmin') { setPortal('superadmin'); if (!platform.schools.length) setPlatform(buildDemoPlatform()); }
     else { setPortal('school'); setRole(v); }

@@ -37,6 +37,8 @@ jobs:
       GH_REPO: ${{ github.repository }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history, for the orphaned-release check below
 
       - uses: actions/setup-node@v5
         with:
@@ -71,3 +73,18 @@ jobs:
       - name: Keep the 10 newest releases
         continue-on-error: true
         run: gh release list --limit 100 --json tagName --jq '.[10:][].tagName' | xargs -r -n1 gh release delete --cleanup-tag --yes
+
+      # After a history rewrite (e.g. removing something from git history), old
+      # releases still point at the old commits and ship their files. Delete any
+      # release whose commit is neither an ancestor nor a descendant of this one.
+      - name: Drop releases from rewritten history
+        continue-on-error: true
+        run: |
+          git fetch --force --tags origin
+          for tag in $(gh release list --limit 100 --json tagName --jq '.[].tagName'); do
+            git rev-parse -q --verify "refs/tags/$tag^{commit}" >/dev/null || continue
+            if ! git merge-base --is-ancestor "$tag" HEAD && ! git merge-base --is-ancestor HEAD "$tag"; then
+              echo "Deleting $tag (not in this branch's history)"
+              gh release delete "$tag" --cleanup-tag --yes
+            fi
+          done
