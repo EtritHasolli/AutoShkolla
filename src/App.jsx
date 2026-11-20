@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { AppProvider, useApp } from './AppContext.jsx';
-import { Sidebar, Topbar, TabBar, MoreSheet, QuickSheet, Banners, Toast } from './components/Shell.jsx';
+import { Sidebar, Topbar, TabBar, MoreSheet, QuickSheet, Banners, Toast, UpdateBar } from './components/Shell.jsx';
 import Modal from './components/Modal.jsx';
 import { Icon, LogoMark, Dialog, Field, PasswordInput, Button } from './components/ui.jsx';
 import { useIsMobile } from './hooks/useMediaQuery.js';
 import { canOpen, isStaff } from './lib/nav.js';
+import { initUpdater } from './lib/updater.js';
 
 import Landing from './pages/Landing.jsx';
 import SchoolPage from './pages/SchoolPage.jsx';
@@ -68,6 +69,7 @@ function SchoolApp() {
       {mobile && sheet === 'more' && <MoreSheet />}
       {mobile && sheet === 'quick' && <QuickSheet />}
       <Modal />
+      <UpdateBar withTabbar={mobile} />
       <Toast withTabbar={mobile} />
     </div>
   );
@@ -136,7 +138,7 @@ function Shell() {
 
   // Public screens each get their own scroll container (keyed) so moving
   // between them starts at the top.
-  const pub = (key, el) => <div className="screen-scroll" key={key}>{el}<Toast /></div>;
+  const pub = (key, el) => <div className="screen-scroll" key={key}>{el}<UpdateBar /><Toast /></div>;
   let screen;
   if (isLoggedIn && (view.screen === 'app' || view.screen === 'login' || view.screen === 'signup')) {
     screen = portal === 'superadmin' ? <SuperAdmin /> : <SchoolApp />;
@@ -160,6 +162,7 @@ function Shell() {
 }
 
 export default function App() {
+  useEffect(() => { initUpdater(); }, []);
   return (
     <AppProvider>
       <Shell />

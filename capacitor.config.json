@@ -11,6 +11,14 @@
       "insetsHandling": "css",
       "style": "LIGHT",
       "initialViewportFitValueHint": "cover"
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": "off",
+      "statsUrl": "",
+      "channelUrl": "",
+      "updateUrl": "",
+      "appReadyTimeout": 15000,
+      "autoDeleteFailed": false
     }
   }
 }

@@ -13,10 +13,12 @@ export const PLANS = [
   { id: 'Premium', instructors: '7+', monthly: 90, setup: 100 },
 ];
 
-// Where the website's "Download for Android" button points. Upload the built
-// APK (android/app/build/outputs/apk/…) to this path on the host, or replace it
-// with a GitHub Releases link.
-export const APK_URL = '/downloads/AutoShkolla.apk';
+// GitHub Releases, published on every push to main by
+// .github/workflows/release.yml. The repo must stay public so phones can
+// download from it. The Android app reads update.json here to update itself.
+export const RELEASES_URL = 'https://github.com/EtritHasolli/AutoShkolla/releases';
+// The website's "Download for Android" button — always the newest APK.
+export const APK_URL = RELEASES_URL + '/latest/download/AutoShkolla.apk';
 
 // Contact shown on the website. Empty values are hidden.
 export const CONTACT = {

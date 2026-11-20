@@ -3,6 +3,7 @@ import { useApp } from '../AppContext.jsx';
 import { Icon, Logo, LogoMark, Avatar, Segmented, Badge } from './ui.jsx';
 import { navFor, tabsFor, navLabel, isStaff } from '../lib/nav.js';
 import { BRAND } from '../lib/brand.js';
+import { useUpdate, dismissUpdate, restartToUpdate } from '../lib/updater.js';
 
 export function LangToggle({ size = 'sm' }) {
   const { lang, setLang } = useApp();
@@ -254,6 +255,24 @@ export function Banners() {
         </div>
       )}
     </>
+  );
+}
+
+// Android only: "new version ready → Restart" or "new APK → Download".
+export function UpdateBar({ withTabbar }) {
+  const { T } = useApp();
+  const u = useUpdate();
+  if (u.status !== 'ready' && u.status !== 'native') return null;
+  const ready = u.status === 'ready';
+  return (
+    <div className={'update-bar' + (withTabbar ? ' with-tabbar' : '')} role="status">
+      <span style={{ color: '#4ade80', display: 'flex' }}><Icon name={ready ? 'sparkle' : 'download'} size={18} sw={2.2} /></span>
+      <span style={{ flex: 1 }}>{T(ready ? 'update_ready' : 'update_native', { v: u.version })}</span>
+      {ready
+        ? <button className="btn btn-sm btn-primary" onClick={restartToUpdate}>{T('update_restart')}</button>
+        : <a className="btn btn-sm btn-primary" href={u.apk}>{T('update_download')}</a>}
+      <button className="update-bar-x" onClick={dismissUpdate} aria-label={T('close')}><Icon name="x" size={16} /></button>
+    </div>
   );
 }
 

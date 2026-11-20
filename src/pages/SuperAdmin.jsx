@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Card, Stat, Badge, Button, Input, Segmented, Choices, Field, Ring, Logo, Avatar, Icon, Empty, KV, PageHeader, schoolTone } from '../components/ui.jsx';
-import { Banners, Toast, LangToggle } from '../components/Shell.jsx';
+import { Banners, Toast, UpdateBar, LangToggle } from '../components/Shell.jsx';
 import { euro, fmtDate, monthShort } from '../lib/format.js';
 import { PLANS } from '../lib/brand.js';
 import { useIsMobile } from '../hooks/useMediaQuery.js';
@@ -207,6 +207,7 @@ export default function SuperAdmin() {
         )}
         <main className="app-scroll">{content}</main>
       </div>
+      <UpdateBar />
       <Toast />
     </div>
   );

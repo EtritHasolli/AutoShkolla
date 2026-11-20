@@ -70,11 +70,30 @@ keep-alive is a free-tier safety net, not a substitute for backups.
 ## Website (Netlify)
 
 `netlify.toml` is ready: connect the GitHub repo in Netlify, add the two
-`VITE_SUPABASE_*` variables, deploy. To offer the APK on the site, copy it to
-`public/downloads/AutoShkolla.apk` before building (or change `APK_URL` in
-`src/lib/brand.js` to a GitHub Releases link).
+`VITE_SUPABASE_*` variables, deploy. The site's Android button links to the
+newest APK on GitHub Releases (`APK_URL` in `src/lib/brand.js`).
 
-## Android APK
+## Android releases & auto-update
+
+Every push to `main` runs `.github/workflows/release.yml`, which publishes a
+GitHub Release with `AutoShkolla.apk`, a web `bundle.zip` and `update.json`.
+Newest APK, always: <https://github.com/EtritHasolli/AutoShkolla/releases/latest/download/AutoShkolla.apk>
+
+Installed apps check `update.json` on launch (`src/lib/updater.js`):
+
+- **Web-only change** → the app downloads the new bundle in the background and
+  shows "Restart"; otherwise it applies on the next launch (or after 10 min in
+  the background). No reinstall. A bundle that crashes on start is rolled back.
+- **Native change** (`android/`, `capacitor.config.json`, adding/upgrading a
+  Capacitor plugin) → CI builds a new APK (versionCode +1) and the app offers
+  to download it.
+
+Put `[skip ci]` in a commit message to push without releasing. The repo must
+stay public, or phones can't download releases. Secrets the workflow needs:
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `ANDROID_KEYSTORE_BASE64`,
+`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+
+## Android APK (local build)
 
 Requirements: Android Studio (for its JDK 21 + Android SDK). Then:
 

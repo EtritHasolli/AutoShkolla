@@ -14,8 +14,11 @@ android {
         applicationId "com.autoshkolla.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // CI passes -PnativeBuild / -PnativeVersion (see .github/workflows/release.yml).
+        // nativeBuild only goes up when native code changes; the app compares it
+        // with update.json to decide between a live update and a new APK.
+        versionCode((project.findProperty('nativeBuild') ?: '1') as Integer)
+        versionName((project.findProperty('nativeVersion') ?: '1.0.0') as String)
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

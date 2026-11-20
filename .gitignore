@@ -39,3 +39,6 @@ release/
 
 # Capacitor asset sources are committed; generated web downloads are not
 public/downloads/*.apk
+
+# Release workflow scratch output (scripts/release-plan.mjs)
+out/
