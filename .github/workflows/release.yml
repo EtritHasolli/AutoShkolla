@@ -27,6 +27,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write   # delete runs from rewritten history (last step)
 
 jobs:
   release:
@@ -86,5 +87,18 @@ jobs:
             if ! git merge-base --is-ancestor "$tag" HEAD && ! git merge-base --is-ancestor HEAD "$tag"; then
               echo "Deleting $tag (not in this branch's history)"
               gh release delete "$tag" --cleanup-tag --yes
+            fi
+          done
+
+      # Their run pages would still show the dropped commits (message, author).
+      - name: Drop workflow runs from rewritten history
+        continue-on-error: true
+        run: |
+          git fetch --force --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          gh api "repos/$GH_REPO/actions/runs?status=completed&per_page=100" --paginate --jq '.workflow_runs[] | "\(.id) \(.head_sha)"' |
+          while read -r id sha; do
+            if ! git cat-file -e "$sha^{commit}" 2>/dev/null || [ -z "$(git branch -r --contains "$sha" 2>/dev/null)" ]; then
+              echo "Deleting run $id ($sha is not on any branch)"
+              gh api -X DELETE "repos/$GH_REPO/actions/runs/$id"
             fi
           done
