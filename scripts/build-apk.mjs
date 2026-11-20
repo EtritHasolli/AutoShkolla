@@ -1,12 +1,16 @@
 // Builds the Android APK:  npm run android:apk
-//   1. vite build (uses .env → the APK talks to your Supabase project)
+//   1. vite build (uses .env / .env.production → the APK talks to your Supabase project)
 //   2. cap sync android
 //   3. gradlew assembleRelease (signed, if android/keystore.properties exists)
 //      or assembleDebug otherwise
 //   4. copies the APK to release/AutoShkolla-v<version>.apk
+//   5. signed live builds also go to apk/ (AutoShkolla.apk + native.json):
+//      commit that folder and the release workflow publishes it. Only needed
+//      when native code changes — CI fails with a reminder if you forget.
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, copyFileSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { nativeFingerprint, readNative, NATIVE_JSON, NATIVE_APK } from './native-fingerprint.mjs';
 
 const win = process.platform === 'win32';
 const env = { ...process.env };
@@ -28,8 +32,15 @@ if (demo) { env.VITE_SUPABASE_URL = ''; env.VITE_SUPABASE_ANON_KEY = ''; }
 run('npx vite build');
 run('npx cap sync android');
 
+// versionCode only goes up when native code changed since the committed APK.
+const fingerprint = nativeFingerprint();
+const prev = readNative();
+const nativeBuild = prev && prev.fingerprint === fingerprint ? prev.nativeBuild : (prev?.nativeBuild || 0) + 1;
+const nativeVersion = `1.0.${nativeBuild}`;
+
 const release = existsSync('android/keystore.properties');
-run((win ? '.\\gradlew.bat' : './gradlew') + (release ? ' assembleRelease' : ' assembleDebug') + ' --console=plain', 'android');
+const gradle = (win ? '.\\gradlew.bat' : './gradlew') + (release ? ' assembleRelease' : ' assembleDebug');
+run(`${gradle} --console=plain -PnativeBuild=${nativeBuild} -PnativeVersion=${nativeVersion}`, 'android');
 
 const version = JSON.parse(readFileSync('package.json', 'utf8')).version;
 const out = release ? 'android/app/build/outputs/apk/release/app-release.apk' : 'android/app/build/outputs/apk/debug/app-debug.apk';
@@ -37,3 +48,10 @@ mkdirSync('release', { recursive: true });
 const dest = `release/AutoShkolla-v${version}${demo ? '-demo' : ''}${release ? '' : '-debug'}.apk`;
 copyFileSync(out, dest);
 console.log('\nAPK ready: ' + dest);
+
+if (release && !demo) {
+  mkdirSync('apk', { recursive: true });
+  copyFileSync(out, NATIVE_APK);
+  writeFileSync(NATIVE_JSON, JSON.stringify({ nativeBuild, nativeVersion, fingerprint }, null, 2) + '\n');
+  console.log(`Release APK (build ${nativeBuild}): ${NATIVE_APK} — commit apk/ and push to publish it.`);
+}

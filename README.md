@@ -77,21 +77,24 @@ newest APK on GitHub Releases (`APK_URL` in `src/lib/brand.js`).
 
 Every push to `main` runs `.github/workflows/release.yml`, which publishes a
 GitHub Release with `AutoShkolla.apk`, a web `bundle.zip` and `update.json`.
+No secrets: the Supabase URL + anon key come from the committed
+`.env.production`, and the APK is the one committed in `apk/`.
 Newest APK, always: <https://github.com/EtritHasolli/AutoShkolla/releases/latest/download/AutoShkolla.apk>
 
 Installed apps check `update.json` on launch (`src/lib/updater.js`):
 
-- **Web-only change** → the app downloads the new bundle in the background and
-  shows "Restart"; otherwise it applies on the next launch (or after 10 min in
-  the background). No reinstall. A bundle that crashes on start is rolled back.
+- **Web-only change** → just push. The app downloads the new bundle in the
+  background and shows "Restart"; otherwise it applies on the next launch (or
+  after 10 min in the background). No reinstall. A bundle that crashes on
+  start is rolled back.
 - **Native change** (`android/`, `capacitor.config.json`, adding/upgrading a
-  Capacitor plugin) → CI builds a new APK (versionCode +1) and the app offers
-  to download it.
+  Capacitor plugin) → run `npm run android:apk` (signs with the local key,
+  bumps versionCode, writes `apk/`), commit `apk/`, push. The app offers the
+  new APK. If you forget, the workflow fails and says so — phones never get JS
+  that needs native code they don't have.
 
 Put `[skip ci]` in a commit message to push without releasing. The repo must
-stay public, or phones can't download releases. Secrets the workflow needs:
-`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `ANDROID_KEYSTORE_BASE64`,
-`ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
+stay public, or phones can't download releases.
 
 ## Android APK (local build)
 

@@ -1,17 +1,14 @@
 name: Release app
 
-# Every push to main publishes a GitHub Release with the Android APK and a
-# live-update bundle (see src/lib/updater.js). Installed apps check the latest
-# release when they open:
-#   • only web code changed → they download it in the background, no reinstall
-#   • native code changed (android/, Capacitor plugins, capacitor.config.json)
-#     → a new APK is built here and the app offers to download it
+# Every push to main publishes a GitHub Release (no secrets needed):
+#   AutoShkolla.apk  the signed APK committed in apk/ (built locally with
+#                    `npm run android:apk` — the signing key never leaves the PC)
+#   bundle.zip       the web app built from this commit
+#   update.json      what installed apps read on launch (src/lib/updater.js)
+# Web-only changes reach phones as a live update, no reinstall. If native code
+# changed (android/, capacitor.config.json, a Capacitor plugin) and apk/ wasn't
+# rebuilt, this fails and tells you to run `npm run android:apk`.
 # Put [skip ci] in a commit message to push without releasing.
-#
-# Secrets (repo → Settings → Secrets and variables → Actions):
-#   SUPABASE_URL, SUPABASE_ANON_KEY   baked into the app (shared with keep-awake)
-#   ANDROID_KEYSTORE_BASE64           base64 of android/keystore/autoshkolla-release.jks
-#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 
 on:
   push:
@@ -23,11 +20,6 @@ on:
       - '.github/workflows/keep-supabase-awake.yml'
       - 'scripts/keepalive.mjs'
   workflow_dispatch:
-    inputs:
-      force_apk:
-        description: Build a new APK even if native code didn't change
-        type: boolean
-        default: false
 
 concurrency:
   group: release
@@ -39,7 +31,7 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -53,71 +45,24 @@ jobs:
 
       - run: npm ci
 
-      - name: Check secrets
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "::error::Set the SUPABASE_URL and SUPABASE_ANON_KEY secrets, otherwise the app ships without its backend."
-            exit 1
-          fi
-
       - name: Plan release
         id: plan
         run: node scripts/release-plan.mjs
         env:
           RUN_NUMBER: ${{ github.run_number }}
-          FORCE_APK: ${{ inputs.force_apk }}
 
+      # Supabase URL + anon key come from the committed .env.production.
       - name: Build web bundle
         run: |
           npx vite build
           (cd dist && zip -qr ../out/bundle.zip .)
         env:
           APP_VERSION: ${{ steps.plan.outputs.version }}
-          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
-      - name: Set up Java
-        if: steps.plan.outputs.build_apk == 'true'
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 21
-          cache: gradle
-
-      - name: Build signed APK
-        if: steps.plan.outputs.build_apk == 'true'
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::ANDROID_KEYSTORE_* secrets are missing, so the APK can't be signed with the release key."
-            exit 1
-          fi
-          mkdir -p android/keystore
-          echo "$KEYSTORE_BASE64" | base64 -d > android/keystore/release.jks
-          printf 'storeFile=keystore/release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
-            "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/keystore.properties
-          npx cap sync android
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleRelease --console=plain \
-            -PnativeBuild=${{ steps.plan.outputs.native_build }} \
-            -PnativeVersion=${{ steps.plan.outputs.native_version }}
-          cp app/build/outputs/apk/release/app-release.apk ../out/AutoShkolla.apk
-
-      - name: Reuse the previous APK (native code unchanged)
-        if: steps.plan.outputs.build_apk != 'true'
-        run: gh release download "${{ steps.plan.outputs.prev_tag }}" --pattern AutoShkolla.apk --dir out
 
       - name: Publish release
         run: |
           TAG="${{ steps.plan.outputs.tag }}"
+          cp apk/AutoShkolla.apk out/AutoShkolla.apk
           gh release delete "$TAG" --cleanup-tag --yes 2>/dev/null || true   # only on a re-run
           gh release create "$TAG" out/AutoShkolla.apk out/bundle.zip out/update.json \
             --target "$GITHUB_SHA" --latest \
