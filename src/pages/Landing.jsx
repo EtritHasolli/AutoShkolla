@@ -218,10 +218,10 @@ export default function Landing() {
               <h2>{T('directory_title')}</h2>
               <p>{T('directory_sub', { n: publicSchools.length })}</p>
             </div>
-            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <div className="input-icon has-left" style={{ width: 220 }}><span className="ic"><Icon name="search" size={16} /></span><input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder={T('search_schools')} /></div>
-              <Select value={city} onChange={e => setCity(e.target.value)} style={{ width: 'auto' }} options={[{ v: 'all', l: T('all_cities') }, ...cities.map(c => ({ v: c, l: c }))]} />
-              <Select value={cat} onChange={e => setCat(e.target.value)} style={{ width: 'auto' }} options={[{ v: 'all', l: T('all_cats') }, ...cats.map(c => ({ v: c, l: T('category') + ' ' + c }))]} />
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', flex: '1 1 320px', maxWidth: 620 }}>
+              <div className="input-icon has-left" style={{ flex: '2 1 220px', minWidth: 0 }}><span className="ic"><Icon name="search" size={16} /></span><input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder={T('search_schools')} /></div>
+              <Select value={city} onChange={e => setCity(e.target.value)} style={{ flex: '1 1 140px', minWidth: 0, width: 'auto' }} options={[{ v: 'all', l: T('all_cities') }, ...cities.map(c => ({ v: c, l: c }))]} />
+              <Select value={cat} onChange={e => setCat(e.target.value)} style={{ flex: '1 1 140px', minWidth: 0, width: 'auto' }} options={[{ v: 'all', l: T('all_cats') }, ...cats.map(c => ({ v: c, l: T('category') + ' ' + c }))]} />
             </div>
           </div>
           {!directoryLoaded ? <div className="spinner dark" style={{ margin: '40px auto' }} /> : list.length ? (
@@ -320,9 +320,9 @@ export default function Landing() {
                   <Button size="lg" icon="globe" onClick={() => navigate({ screen: 'login' })}>{T('open_web_app')}</Button>
                 </div>
               </div>
-              <div className="row" style={{ gap: 14, flex: '1 1 300px', justifyContent: 'center' }}>
+              <div className="row" style={{ gap: 10, flex: '1 1 280px', justifyContent: 'center', minWidth: 0 }}>
                 {[['smartphone', 'role_instructor', 'violet'], ['user', 'role_student', 'teal'], ['monitor', 'owner', 'brand']].map(([ic, k, tone]) => (
-                  <div key={k} className="feature" style={{ textAlign: 'center', flex: 1 }}>
+                  <div key={k} className="feature" style={{ textAlign: 'center', flex: '1 1 0', minWidth: 0, padding: '18px 8px' }}>
                     <div style={{ display: 'inline-flex' }}><ToneIcon name={ic} tone={tone} size={46} /></div>
                     <h3>{T(k)}</h3>
                   </div>

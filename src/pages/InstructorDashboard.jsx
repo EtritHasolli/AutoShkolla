@@ -19,9 +19,9 @@ function NextLessonCard({ lesson }) {
   return (
     <div style={{ borderRadius: 20, padding: 20, color: '#fff', background: 'linear-gradient(150deg, #2f63f5 0%, #1c47c7 100%)', boxShadow: '0 20px 40px -22px rgba(36,86,230,.8)', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', right: -60, top: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,.35), transparent 70%)' }} />
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', opacity: .8 }}>{T('next_lesson')}</span>
-        <span className="mono" style={{ background: 'rgba(255,255,255,.18)', padding: '4px 10px', borderRadius: 8, fontWeight: 700 }}>{fmtDay(lesson.date, lang)} · {hh(lesson.hour)}</span>
+      <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, position: 'relative' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', opacity: .8, whiteSpace: 'nowrap' }}>{T('next_lesson')}</span>
+        <span className="mono" style={{ background: 'rgba(255,255,255,.18)', padding: '4px 10px', borderRadius: 8, fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtDay(lesson.date, lang)} · {hh(lesson.hour)}</span>
       </div>
       <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.03em', marginTop: 12 }}>{s?.name}</div>
       <div className="row" style={{ gap: 16, marginTop: 8, opacity: .9, fontSize: 13.5, flexWrap: 'wrap' }}>

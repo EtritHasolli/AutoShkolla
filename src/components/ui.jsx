@@ -137,7 +137,7 @@ export function Card({ title, sub, extra, children, flush, className = '', bodyS
     <div id={id} className={'card ' + (flush ? 'card-flush ' : '') + className} style={style}>
       {(title || extra) && (
         <div className="card-head">
-          <div style={{ minWidth: 0 }}>
+          <div className="card-head-title">
             {title && <div className="card-title truncate">{title}</div>}
             {sub && <div className="card-sub">{sub}</div>}
           </div>

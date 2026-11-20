@@ -31,12 +31,17 @@ export function deriveStudents(students, lessons, payments, exams) {
     };
     return {
       ...s, progress,
-      used: u, remaining: Math.max(0, (s.total || 0) - u),
+      used: u, remaining: Math.max(0, (s.total || 0) - u), extra: Math.max(0, u - (s.total || 0)),
       price, paid: paidSum, due, payment,
       readiness: Math.max(0, Math.min(100, readiness)),
       theory: examState('theory', s.theory), practical: examState('practical', s.practical),
     };
   });
+}
+
+// "20 of 20 lessons · +2 extra" instead of "22 of 20" when a student drives past the package.
+export function lessonsText(T, s) {
+  return T('lessons_used', { u: Math.min(s.used, s.total || s.used), t: s.total }) + (s.extra ? ' · ' + T('lessons_extra', { n: s.extra }) : '');
 }
 
 export function deriveInstructors(instructors, students) {

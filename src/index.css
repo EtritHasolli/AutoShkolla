@@ -157,12 +157,16 @@ img { max-width: 100%; display: block; }
   width: 56px; height: 56px; border-radius: 18px; border: 0;
   background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 14px 30px -10px rgba(36, 86, 230, .7);
+  transition: transform .22s ease, opacity .22s ease;
 }
 .fab:active { transform: scale(.95); }
+.fab.away { transform: translateY(30px) scale(.6); opacity: 0; pointer-events: none; }
 
 /* ---------- surfaces ---------- */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
-.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--line-2); }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 15px 18px; border-bottom: 1px solid var(--line-2); flex-wrap: wrap; }
+/* the title keeps at least ~140px; header actions wrap below it on narrow screens */
+.card-head-title { flex: 1 1 140px; min-width: 0; }
 .card-title { font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
 .card-sub { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
 .card-body { padding: 16px 18px; }
@@ -260,8 +264,9 @@ button.row-item:hover, .row-item.clickable:hover { background: var(--surface-2);
 .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(15, 23, 42, .12); }
 .seg-sm button { height: 28px; padding: 0 10px; font-size: 12px; }
 .choices { display: flex; gap: 8px; flex-wrap: wrap; }
+/* equal widths on one line; never narrower than the label — wraps instead */
 .choice {
-  flex: 1; min-width: 0; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2);
+  flex: 1 1 0; min-width: max-content; max-width: 100%; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink-2);
   font-size: 13px; font-weight: 600; height: 40px; padding: 0 12px; border-radius: var(--radius-sm);
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
 }
@@ -491,6 +496,12 @@ button.row-item:hover, .row-item.clickable:hover { background: var(--surface-2);
   .card-head { padding: 13px 14px; }
   .card-body { padding: 14px; }
   .row-item { padding: 11px 14px; }
+  /* tabs share the width instead of scrolling off-screen */
+  .tabs { gap: 0; }
+  .tabs button { flex: 1 1 auto; padding: 11px 6px; font-size: 13px; }
+  /* three stats in a row: no room for the icon tiles */
+  .stats-3 .stat .ic-tile { display: none; }
+  .stats-3 .stat-label { font-size: 12px; }
 }
 @media (max-width: 420px) {
   .form-row { grid-template-columns: minmax(0, 1fr); }

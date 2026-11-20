@@ -21,7 +21,7 @@ export default function Exams() {
     <div className="page">
       <PageHeader title={T('exams')} actions={staff && <Button variant="primary" icon="plus" onClick={() => openModal({ type: 'exam' })}>{T('schedule_exam')}</Button>} />
       {role !== 'student' && (
-        <div className="grid-3" style={{ gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
+        <div className="grid-3 stats-3" style={{ gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
           <Stat label={T('upcoming')} value={upcoming.length} icon="calendar" tone="brand" />
           <Stat label={T('pass_rate') + ' · ' + T('theory')} value={rate('theory')} icon="courses" tone="violet" />
           <Stat label={T('pass_rate') + ' · ' + T('practical')} value={rate('practical')} icon="car" tone="teal" />
@@ -36,22 +36,25 @@ export default function Exams() {
           const past = e.status === 'scheduled' && d < 0;
           return (
             <div key={e.id} className="row-item" style={{ flexWrap: 'wrap' }}>
-              <button className="row" style={{ gap: 12, flex: '1 1 220px', minWidth: 0, border: 0, background: 'none', padding: 0, textAlign: 'left' }} onClick={() => role !== 'student' && openStudent(s.id)}>
+              <button className="row" style={{ gap: 12, flex: '1 1 170px', minWidth: 0, border: 0, background: 'none', padding: 0, textAlign: 'left' }} onClick={() => role !== 'student' && openStudent(s.id)}>
                 <Avatar name={s.name} size={38} />
                 <div style={{ minWidth: 0 }}>
                   <div className="row-title">{role === 'student' ? T(e.type + '_exam') : s.name}</div>
                   <div className="row-sub">{role === 'student' ? fmtDay(e.date, lang) : `${T(e.type + '_exam')} · ${fmtDay(e.date, lang)} · ${T('readiness')} ${s.readiness}%`}</div>
                 </div>
               </button>
-              {e.status === 'scheduled' && staff && (past || d <= 0) ? (
-                <div className="row" style={{ gap: 6 }}>
-                  <Button size="sm" variant="success" icon="check" onClick={() => updateExam(e.id, { status: 'passed' })}>{T('passed')}</Button>
-                  <Button size="sm" variant="danger-soft" icon="x" onClick={() => updateExam(e.id, { status: 'failed' })}>{T('failed')}</Button>
-                </div>
-              ) : e.status === 'scheduled' ? (
-                <Badge tone={d <= 3 ? 'amber' : 'brand'}>{d === 0 ? T('today') : d === 1 ? T('tomorrow') : T('days_left', { n: d })}</Badge>
-              ) : <Badge tone={examTone(e.status)} dot>{T(e.status)}</Badge>}
-              {staff && <Button size="sm" variant="ghost" icon="edit" title={T('edit')} onClick={() => openModal({ type: 'exam', editId: e.id })} />}
+              {/* status + edit stay together; the group wraps right-aligned when the row is narrow */}
+              <div className="row" style={{ gap: 6, marginLeft: 'auto', flexShrink: 0 }}>
+                {e.status === 'scheduled' && staff && (past || d <= 0) ? (
+                  <>
+                    <Button size="sm" variant="success" icon="check" onClick={() => updateExam(e.id, { status: 'passed' })}>{T('passed')}</Button>
+                    <Button size="sm" variant="danger-soft" icon="x" onClick={() => updateExam(e.id, { status: 'failed' })}>{T('failed')}</Button>
+                  </>
+                ) : e.status === 'scheduled' ? (
+                  <Badge tone={d <= 3 ? 'amber' : 'brand'}>{d === 0 ? T('today') : d === 1 ? T('tomorrow') : T('days_left', { n: d })}</Badge>
+                ) : <Badge tone={examTone(e.status)} dot>{T(e.status)}</Badge>}
+                {staff && <Button size="sm" variant="ghost" icon="edit" title={T('edit')} onClick={() => openModal({ type: 'exam', editId: e.id })} />}
+              </div>
             </div>
           );
         }) : <Empty icon="exams" title={T('no_exams')} />}

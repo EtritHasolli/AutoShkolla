@@ -8,6 +8,7 @@ import { deriveStudents, deriveInstructors } from './lib/derive.js';
 import { canOpen } from './lib/nav.js';
 import { todayISO, addDays, weekStart, uid, toCSV, saveTextFile, DAY_KEYS, fmtDate } from './lib/format.js';
 import { DEFAULT_PACKAGES, BRAND } from './lib/brand.js';
+import { Capacitor } from '@capacitor/core';
 
 const AppContext = createContext(null);
 
@@ -128,7 +129,7 @@ export function AppProvider({ children }) {
     setLive(false);
     setPlatform(buildDemoPlatform());
     store.set('as-demo', { role: r });
-    const u = { id: 'demo-user', name: r === 'instructor' ? d.instructors[0].name : r === 'student' ? d.students[0].name : 'Astrit Kuçi', email: DEV_EMAIL, role: r };
+    const u = { id: 'demo-user', name: r === 'instructor' ? d.instructors[0].name : r === 'student' ? d.students[0].name : 'Astrit Kuçi', email: 'demo@autoshkolla.app', role: r };
     if (r === 'superadmin') enterPlatform(u);
     else enterSchool(r, u, d.school);
   }, [loadData, enterSchool, enterPlatform]);
@@ -286,7 +287,10 @@ export function AppProvider({ children }) {
 
   async function resetPassword(email) {
     if (!hasBackend) return { ok: true };
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    // Inside the Android app the origin is https://localhost, which a browser
+    // can't open — let Supabase fall back to the Site URL (the website).
+    const opts = Capacitor.isNativePlatform() ? {} : { redirectTo: window.location.origin + window.location.pathname };
+    const { error } = await supabase.auth.resetPasswordForEmail(email, opts);
     return error ? { ok: false, error: error.message } : { ok: true };
   }
   async function resendConfirmation(email) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Card, Badge, Avatar, Button, LinkButton, Empty, Icon, Input, Segmented, Progress, Ring, Textarea, KV, PageHeader, lessonTone, payTone, examTone } from '../components/ui.jsx';
 import { euro, hh, fmtDay, fmtDate, telLink, whatsappLink } from '../lib/format.js';
+import { lessonsText } from '../lib/derive.js';
 import { useIsMobile } from '../hooks/useMediaQuery.js';
 import { isStaff } from '../lib/nav.js';
 import { SKILLS } from '../data/seed.js';
@@ -44,7 +45,7 @@ function StudentList() {
                 <Avatar name={s.name} size={40} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="row-title">{s.name}</div>
-                  <div className="row-sub">{T('lessons_used', { u: s.used, t: s.total })}{i && role !== 'instructor' ? ' · ' + i.name.split(' ')[0] : ''}</div>
+                  <div className="row-sub">{lessonsText(T, s)}{i && role !== 'instructor' ? ' · ' + i.name.split(' ')[0] : ''}</div>
                 </div>
                 {staff ? <Badge tone={payTone(s.payment)}>{s.due > 0 ? euro(s.due) : T('paid')}</Badge> : <span className="mono muted" style={{ fontWeight: 600 }}>{s.readiness}%</span>}
               </button>
@@ -120,7 +121,7 @@ function SkillScores({ s, editable }) {
               <div style={{ fontSize: 28, fontWeight: 800 }}>{s.readiness}%</div>
             </Ring>
             <div style={{ marginTop: 10 }}><Badge tone={s.readiness >= 70 ? 'green' : 'amber'}>{s.readiness >= 70 ? T('exam_ready') : T('needs_practice')}</Badge></div>
-            <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>{T('avg_skill', { v: avg })} · {T('lessons_used', { u: s.used, t: s.total })}</div>
+            <div className="muted" style={{ fontSize: 12.5, marginTop: 8 }}>{T('avg_skill', { v: avg })} · {lessonsText(T, s)}</div>
           </div>
         </Card>
         <Card title={T('weakest_areas')}>
@@ -217,11 +218,11 @@ function Overview({ s, staff, canEdit }) {
         <Card title={T('package')} sub={s.packageName || null}>
           <div className="row" style={{ gap: 20 }}>
             <Ring pct={s.total ? s.used / s.total * 100 : 0} size={100}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{s.remaining}</div>
-              <div className="muted" style={{ fontSize: 11, fontWeight: 600 }}>{T('remaining')}</div>
+              <div style={{ fontSize: 24, fontWeight: 800 }}>{s.extra ? '+' + s.extra : s.remaining}</div>
+              <div className="muted" style={{ fontSize: 11, fontWeight: 600 }}>{T(s.extra ? 'extra_lessons' : 'remaining')}</div>
             </Ring>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 18, fontWeight: 750 }}>{T('lessons_used', { u: s.used, t: s.total })}</div>
+              <div style={{ fontSize: 18, fontWeight: 750 }}>{lessonsText(T, s)}</div>
               <div style={{ margin: '10px 0' }}><Progress value={s.used} max={s.total} h={8} /></div>
               <div className="muted" style={{ fontSize: 13 }}>{T('readiness')}: <b style={{ color: s.readiness >= 70 ? 'var(--green)' : 'var(--amber)' }}>{s.readiness}%</b></div>
             </div>

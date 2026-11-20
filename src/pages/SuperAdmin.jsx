@@ -189,7 +189,6 @@ export default function SuperAdmin() {
         </aside>
       )}
       <div className="app-main">
-        <Banners />
         {mobile ? (
           <header className="topbar">
             <Logo size={30} sub="Super admin" />
@@ -200,6 +199,8 @@ export default function SuperAdmin() {
         ) : (
           <header className="topbar"><div className="topbar-title">{navItems.find(n => n[0] === nav)[2]}</div><span className="spacer" /><LangToggle /></header>
         )}
+        {/* below the topbar: on phones the topbar owns the status-bar inset */}
+        <Banners />
         {mobile && (
           <div style={{ padding: '10px 16px 0' }}>
             <Segmented value={nav} onChange={v => { setNav(v); setOpenId(null); }} options={navItems.map(([k, , l]) => ({ v: k, l }))} />

@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Card, Stat, Badge, Avatar, Button, LinkButton, Empty, Icon, ToneIcon, PageHeader, lessonTone } from '../components/ui.jsx';
 import { euro, hh, fmtLong, fmtDay, sameMonth, addDays, greetingKey, whatsappLink, daysUntil } from '../lib/format.js';
+import { lessonsText } from '../lib/derive.js';
 import { vehicleAlerts, alertText } from '../lib/alerts.js';
 import { BRAND } from '../lib/brand.js';
 
@@ -77,7 +78,7 @@ export default function Dashboard() {
                 <Avatar name={s.name} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="row-title">{s.name}</div>
-                  <div className="row-sub">{T('lessons_used', { u: s.used, t: s.total })}</div>
+                  <div className="row-sub">{lessonsText(T, s)}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div className="tnum" style={{ fontWeight: 700, color: 'var(--red)' }}>{euro(s.due)}</div>

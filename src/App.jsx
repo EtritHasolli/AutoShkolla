@@ -51,20 +51,37 @@ function SchoolApp() {
   const { role, sheet, setSheet, route, selStudent } = useApp();
   const mobile = useIsMobile(1023);
   const scrollRef = React.useRef(null);
-  useEffect(() => { scrollRef.current?.scrollTo(0, 0); }, [route, selStudent]);
+  const [fabAway, setFabAway] = useState(false);
+  useEffect(() => { scrollRef.current?.scrollTo(0, 0); setFabAway(false); }, [route, selStudent]);
+  // The FAB slides away while scrolling down (so it never sits on amounts and
+  // badges in a list) and comes back on scroll up.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let last = el.scrollTop;
+    const onScroll = () => {
+      const y = el.scrollTop;
+      if (Math.abs(y - last) < 8) return;
+      setFabAway(y > last && y > 60);
+      last = y;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
   const fab = mobile && isStaff(role) && !selStudent && ['dashboard', 'calendar', 'students', 'payments'].includes(route);
 
   return (
     <div className="app">
       {!mobile && <Sidebar />}
       <div className="app-main">
-        <Banners />
         <Topbar mobile={mobile} />
+        {/* below the topbar: on phones the topbar owns the status-bar inset */}
+        <Banners />
         <main className="app-scroll" ref={scrollRef}><Page /></main>
         {mobile && <TabBar />}
       </div>
       {fab && (
-        <button className="fab" onClick={() => setSheet('quick')} aria-label="+"><Icon name="plus" size={26} sw={2.4} /></button>
+        <button className={'fab' + (fabAway ? ' away' : '')} onClick={() => setSheet('quick')} aria-label="+"><Icon name="plus" size={26} sw={2.4} /></button>
       )}
       {mobile && sheet === 'more' && <MoreSheet />}
       {mobile && sheet === 'quick' && <QuickSheet />}

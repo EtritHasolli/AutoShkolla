@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../AppContext.jsx';
 import { Card, Badge, Avatar, Button, LinkButton, Empty, Icon, Progress, Ring, examTone } from '../components/ui.jsx';
 import { hh, fmtLong, fmtDay, euro, greetingKey, telLink, whatsappLink, daysUntil } from '../lib/format.js';
+import { lessonsText } from '../lib/derive.js';
 import { NotLinked } from './InstructorDashboard.jsx';
 import { SKILLS } from '../data/seed.js';
 
@@ -49,11 +50,11 @@ export default function StudentDashboard() {
         <Card title={T('package')} sub={s.packageName || null}>
           <div className="row" style={{ gap: 18 }}>
             <Ring pct={usedPct} size={100}>
-              <div style={{ fontSize: 24, fontWeight: 800 }}>{s.remaining}</div>
-              <div className="muted" style={{ fontSize: 11, fontWeight: 600 }}>{T('remaining')}</div>
+              <div style={{ fontSize: 24, fontWeight: 800 }}>{s.extra ? '+' + s.extra : s.remaining}</div>
+              <div className="muted" style={{ fontSize: 11, fontWeight: 600 }}>{T(s.extra ? 'extra_lessons' : 'remaining')}</div>
             </Ring>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 18, fontWeight: 750 }}>{T('lessons_used', { u: s.used, t: s.total })}</div>
+              <div style={{ fontSize: 18, fontWeight: 750 }}>{lessonsText(T, s)}</div>
               <div style={{ marginTop: 10 }}><Progress value={s.used} max={s.total} h={8} /></div>
             </div>
           </div>

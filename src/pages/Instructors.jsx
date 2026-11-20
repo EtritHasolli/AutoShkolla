@@ -7,7 +7,7 @@ export default function Instructors() {
   const { data, lessons, today, T, openModal, setCalFilterI, setCalView, go } = useApp();
   return (
     <div className="page">
-      <PageHeader title={T('instructors')} sub={T('kpi_n_students', { n: data.students.length })}
+      <PageHeader title={T('instructors')} sub={T('n_instructors', { n: data.instructors.length })}
         actions={<Button variant="primary" icon="plus" onClick={() => openModal({ type: 'instructor' })}>{T('add_instructor')}</Button>} />
       {!data.instructors.length ? (
         <Card><Empty icon="instructors" title={T('no_instructors')} text={T('no_instructors_text')} action={<Button variant="primary" icon="plus" onClick={() => openModal({ type: 'instructor' })}>{T('add_instructor')}</Button>} /></Card>
