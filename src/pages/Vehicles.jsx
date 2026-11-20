@@ -1,72 +1,57 @@
 import React from 'react';
 import { useApp } from '../AppContext.jsx';
-import { Icon, Pill } from '../components/ui.jsx';
-import { C, font } from '../data/seed.js';
+import { Card, Button, Empty, Badge, ToneIcon, PageHeader, vehicleTone } from '../components/ui.jsx';
+import { fmtDate, daysUntil } from '../lib/format.js';
 
-function daysTo(date) { return Math.round((new Date(date) - Date.now()) / 86400000); }
+function Deadline({ label, date }) {
+  const { T, lang } = useApp();
+  if (!date) return <div style={{ flex: 1, minWidth: 0 }}><div className="muted" style={{ fontSize: 12, fontWeight: 600 }}>{label}</div><div className="soft" style={{ fontWeight: 600, marginTop: 2 }}>—</div></div>;
+  const d = daysUntil(date);
+  const tone = d < 0 || d <= 7 ? 'red' : d <= 30 ? 'amber' : null;
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="muted" style={{ fontSize: 12, fontWeight: 600 }}>{label}</div>
+      <div style={{ fontWeight: 650, marginTop: 2, color: tone ? `var(--${tone})` : 'var(--ink)' }}>{fmtDate(date, lang)}</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: tone ? `var(--${tone})` : 'var(--soft)' }}>{d < 0 ? T('expired') : T('days_left', { n: d })}</div>
+    </div>
+  );
+}
 
 export default function Vehicles() {
-  const { data, openModal, T } = useApp();
-  const statusMap = {
-    available: [C.grn, C.grnBg, T('available')],
-    in_use: [C.pri, C.priBg, T('in_use')],
-    maintenance: [C.amb, C.ambBg, T('maintenance')],
-  };
-
-  function Expiry({ label, date }) {
-    if (!date) {
-      return (
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11.5, color: C.mut, fontWeight: 600 }}>{label}</div>
-          <div style={{ fontSize: 13.5, fontWeight: 600, color: C.soft, marginTop: 2 }}>—</div>
-        </div>
-      );
-    }
-    const d = daysTo(date);
-    return (
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 11.5, color: C.mut, fontWeight: 600 }}>{label}</div>
-        <div style={{ fontSize: 13.5, fontWeight: 600, color: d < 14 ? C.red : d < 30 ? C.amb : C.ink, marginTop: 2 }}>{new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}</div>
-        <div style={{ fontSize: 11, color: d < 14 ? C.red : C.soft, fontWeight: 600 }}>{d < 0 ? 'expired' : d + ' days'}</div>
-      </div>
-    );
-  }
-
+  const { data, lessons, today, T, openModal } = useApp();
   return (
-    <div style={{ padding: '22px 26px 40px', animation: 'df-fade .25s' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ flex: 1 }} />
-        <button onClick={() => openModal({ type: 'vehicle' })} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
-          <Icon name="plus" size={16} sw={2.2} /> Add vehicle
-        </button>
-      </div>
-      <div className="df-grid-2">
-        {data.vehicles.map(v => {
-          const sm = statusMap[v.status];
-          return (
-            <div key={v.id} style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 15, overflow: 'hidden' }}>
-              <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid ' + C.line2 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 11, background: C.priBg, color: C.pri, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="car2" size={26} sw={1.8} />
+    <div className="page">
+      <PageHeader title={T('vehicles')} actions={<Button variant="primary" icon="plus" onClick={() => openModal({ type: 'vehicle' })}>{T('add_vehicle')}</Button>} />
+      {!data.vehicles.length ? (
+        <Card><Empty icon="car" title={T('no_vehicles')} text={T('no_vehicles_text')} action={<Button variant="primary" icon="plus" onClick={() => openModal({ type: 'vehicle' })}>{T('add_vehicle')}</Button>} /></Card>
+      ) : (
+        <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+          {data.vehicles.map(v => {
+            const driver = data.instructors.find(i => i.vehicle === v.id);
+            const todayCount = lessons.filter(l => l.vehicleId === v.id && l.date === today && l.status !== 'cancelled').length;
+            return (
+              <div key={v.id} className="card card-hover" onClick={() => openModal({ type: 'vehicle', editId: v.id })}>
+                <div className="row" style={{ gap: 12, padding: 16, borderBottom: '1px solid var(--line-2)' }}>
+                  <ToneIcon name="car" tone="brand" size={46} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="truncate" style={{ fontWeight: 700, fontSize: 15.5 }}>{v.name}</div>
+                    <div className="mono muted truncate" style={{ fontSize: 12.5 }}>{v.plate}{v.year ? ' · ' + v.year : ''}{v.km ? ' · ' + Number(v.km).toLocaleString('de-DE') + ' km' : ''}</div>
+                  </div>
+                  <Badge tone={vehicleTone(v.status)} dot>{T(v.status)}</Badge>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: font.disp, fontSize: 16.5, fontWeight: 700, color: C.ink }}>{v.name}</div>
-                  <div style={{ fontFamily: font.mono, fontSize: 12.5, color: C.mut, marginTop: 1 }}>{v.plate} · {v.year} · {v.km.toLocaleString('de-DE')} km</div>
+                <div className="row" style={{ gap: 12, padding: '14px 16px', alignItems: 'flex-start' }}>
+                  <Deadline label={T('insurance')} date={v.ins} />
+                  <Deadline label={T('registration')} date={v.reg} />
+                  <Deadline label={T('next_service')} date={v.service} />
                 </div>
-                <Pill text={sm[2]} color={sm[0]} bg={sm[1]} />
-                <button onClick={() => openModal({ type: 'vehicle', editId: v.id })} style={{ width: 34, height: 34, borderRadius: 9, border: 'none', background: C.priBg, color: C.pri, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  <Icon name="edit" size={16} sw={1.9} />
-                </button>
+                <div className="row muted" style={{ gap: 6, padding: '0 16px 14px', fontSize: 12.5 }}>
+                  {driver ? driver.name : T('unassigned')} · {T('n_lessons', { n: todayCount })} {T('today').toLowerCase()}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 12, padding: '16px 20px' }}>
-                <Expiry label="Insurance" date={v.ins} />
-                <Expiry label="Registration" date={v.reg} />
-                <Expiry label="Next service" date={v.service} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

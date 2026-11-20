@@ -33,3 +33,9 @@ Thumbs.db
 
 # Vite cache
 .vite/
+
+# Built APKs
+release/
+
+# Capacitor asset sources are committed; generated web downloads are not
+public/downloads/*.apk

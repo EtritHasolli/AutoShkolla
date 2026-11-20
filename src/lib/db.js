@@ -1,105 +1,97 @@
-// Data adapter between Supabase rows and the shapes the UI consumes.
-// The UI was built against the seed-data shapes (see src/data/seed.js) —
-// every mapper here produces exactly those, including the derived fields
-// (used/remaining/paid/due/payment status/readiness) that live tables don't store.
+// Adapter between Supabase rows and the shapes the UI uses.
+// Derived fields (lessons used, balance, readiness…) are computed in
+// lib/derive.js so demo and live mode share one code path.
 import { supabase } from './supabase.js';
-import { skills } from '../data/seed.js';
+import { platformTrend } from '../data/seed.js';
 
-const DAY_MS = 86400000;
+// Old plan names (schema v1) → the 3 tiers from "Pricing & Packages".
+const PLAN_ALIAS = { Starter: 'Fillestar', Pro: 'Standard' };
 
-function parseDate(s) {
-  if (!s) return null;
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
+// ---- resilience ---------------------------------------------------------------
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const isNetworkError = (e) => /fetch|network|timeout|load failed/i.test(e?.message || '');
+
+// Runs a Supabase call; retries quietly on network errors (flaky office Wi-Fi),
+// and if the database is missing a newer column (migration not run yet) it
+// drops that column from the payload and tries again instead of failing.
+async function run(build, payload, onRetry) {
+  let body = payload ? { ...payload } : undefined;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const { data, error } = await build(body);
+    if (!error) return data;
+    const missing = /Could not find the '([^']+)' column/i.exec(error.message || '');
+    if (missing && body && missing[1] in body) {
+      delete body[missing[1]];
+      continue;
+    }
+    if (isNetworkError(error) && attempt < 4) {
+      onRetry?.();
+      await sleep(600 * 2 ** attempt);
+      continue;
+    }
+    throw error;
+  }
+  throw new Error('Request failed');
 }
 
-export function toISODate(d) {
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+let retryListener = null;
+export function onNetworkRetry(fn) { retryListener = fn; }
+const notifyRetry = () => retryListener?.();
+
+async function rows(table, schoolId, order = 'created_at', optional = false) {
+  try {
+    return await run(() => supabase.from(table).select('*').eq('school_id', schoolId).order(order), undefined, notifyRetry);
+  } catch (e) {
+    if (optional) return [];
+    throw e;
+  }
 }
 
-function dayIndex(dateStr, monday) {
-  const d = parseDate(dateStr);
-  return Math.round((d - monday) / DAY_MS); // 0..5 inside the shown week
-}
-
-function relTime(iso) {
-  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 60) return mins + 'm ago';
-  const h = Math.round(mins / 60);
-  if (h < 24) return h + 'h ago';
-  return Math.round(h / 24) + 'd ago';
-}
-
-async function rows(table, schoolId, order = 'created_at') {
-  const { data, error } = await supabase.from(table).select('*').eq('school_id', schoolId).order(order);
-  if (error) throw error;
-  return data;
-}
-
-// ---- row → UI shape mappers -------------------------------------------------
-
+// ---- row → UI shape -------------------------------------------------------------
 export function mapVehicle(v) {
+  return { id: v.id, name: v.name, plate: v.plate, cat: v.cat, year: v.year, reg: v.reg, ins: v.ins, km: v.km, status: v.status, service: v.service };
+}
+export function mapInstructor(i) {
+  return { id: i.id, name: i.name, cat: i.cat, phone: i.phone || '', color: i.color, rating: Number(i.rating), vehicle: i.vehicle_id, email: i.email || '', profileId: i.profile_id };
+}
+export function mapStudent(s) {
   return {
-    id: v.id, name: v.name, plate: v.plate, cat: v.cat, year: v.year,
-    reg: v.reg, ins: v.ins, km: v.km, status: v.status, service: v.service,
+    id: s.id, name: s.name, phone: s.phone || '', email: s.email || '', cat: s.cat,
+    instructorId: s.instructor_id, total: s.total, price: Number(s.price), packageName: s.package_name || '',
+    progress: s.progress || {}, joined: s.joined, theory: s.theory, practical: s.practical,
+    notes: s.notes || '', profileId: s.profile_id, usedBase: 0,
   };
 }
-
-export function mapInstructor(i, studentCount) {
-  return {
-    id: i.id, name: i.name, cat: i.cat, phone: i.phone || '', color: i.color,
-    rating: Number(i.rating), students: studentCount, vehicle: i.vehicle_id,
-    email: i.email || '', profileId: i.profile_id,
-  };
+export function mapLesson(l) {
+  return { id: l.id, date: l.lesson_date, hour: l.hour, studentId: l.student_id, instructorId: l.instructor_id, vehicleId: l.vehicle_id, status: l.status, type: l.type, pickup: l.pickup || '' };
 }
-
-export function mapStudent(s, { usedCount, paidSum }) {
-  const price = Number(s.price);
-  const paid = Math.min(price, paidSum);
-  const due = Math.max(0, price - paid);
-  const payment = due <= 0 ? 'paid' : paid > 0 ? 'partial' : 'unpaid';
-  const progress = s.progress || {};
-  skills.forEach(k => { if (!progress[k]) progress[k] = 1; });
-  const avgSkill = skills.reduce((a, k) => a + progress[k], 0) / skills.length;
-  return {
-    id: s.id, name: s.name, phone: s.phone || '', cat: s.cat,
-    instructorId: s.instructor_id, total: s.total,
-    used: usedCount, remaining: Math.max(0, s.total - usedCount),
-    payment, price, paid, due, progress,
-    joined: s.joined, theory: s.theory, practical: s.practical,
-    readiness: Math.min(100, Math.round(24 + usedCount * 2 + avgSkill * 8)),
-    email: s.email || '', profileId: s.profile_id,
-  };
-}
-
-export function mapLesson(l, monday) {
-  return {
-    id: l.id, day: dayIndex(l.lesson_date, monday), hour: l.hour,
-    date: l.lesson_date, studentId: l.student_id, instructorId: l.instructor_id,
-    vehicleId: l.vehicle_id, status: l.status, type: l.type, pickup: l.pickup,
-  };
-}
-
 export function mapPayment(p) {
-  return { id: p.id, studentId: p.student_id, date: p.date, amount: Number(p.amount), method: p.method, note: p.note };
+  return { id: p.id, studentId: p.student_id, date: p.date, amount: Number(p.amount), method: p.method, note: p.note || '' };
 }
-
 export function mapExam(e) {
   return { id: e.id, studentId: e.student_id, type: e.type, date: e.date, status: e.status };
 }
-
 export function mapCourse(c) {
   return { id: c.id, title: c.title, desc: c.descr, questions: c.questions || [] };
 }
-
 export function mapNotif(n) {
-  return { id: n.id, type: n.type, title: n.title, body: n.body, time: relTime(n.created_at), status: n.status, read: n.read };
+  return { id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.created_at, status: n.status, read: n.read };
+}
+function mapSchoolCommon(s) {
+  return {
+    id: s.id, name: s.name, city: s.city || '', address: s.address || '', phone: s.phone || '',
+    logo: s.logo_url || null, cats: s.cats || ['B'], mapsUrl: s.maps_url || '',
+    hoursStart: s.hours_start || '08:00', hoursEnd: s.hours_end || '18:00',
+    workingDays: s.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    acceptEnrollments: s.accept_enrollments !== false,
+    // null = the school hasn't published packages yet. Never show made-up
+    // prices publicly; the app offers DEFAULT_PACKAGES as a starting point.
+    packages: Array.isArray(s.packages) && s.packages.length ? s.packages : null,
+  };
 }
 
-// ---- loading ---------------------------------------------------------------
-
-// Everything a school portal session needs, in the exact shapes the UI expects.
-export async function fetchSchoolBundle(schoolId, monday) {
+// ---- loading ----------------------------------------------------------------------
+export async function fetchSchoolBundle(schoolId) {
   const [ins, veh, stu, les, pay, exa, cou, not] = await Promise.all([
     rows('instructors', schoolId),
     rows('vehicles', schoolId),
@@ -108,21 +100,13 @@ export async function fetchSchoolBundle(schoolId, monday) {
     rows('payments', schoolId, 'date'),
     rows('exams', schoolId, 'date'),
     rows('courses', schoolId),
-    supabase.from('notifications').select('*').eq('school_id', schoolId)
-      .order('created_at', { ascending: false }).then(r => { if (r.error) throw r.error; return r.data; }),
+    run(() => supabase.from('notifications').select('*').eq('school_id', schoolId).order('created_at', { ascending: false }).limit(100), undefined, notifyRetry),
   ]);
-
-  const usedBy = {}, paidBy = {};
-  les.forEach(l => { if (l.status === 'completed') usedBy[l.student_id] = (usedBy[l.student_id] || 0) + 1; });
-  pay.forEach(p => { paidBy[p.student_id] = (paidBy[p.student_id] || 0) + Number(p.amount); });
-  const countBy = {};
-  stu.forEach(s => { if (s.instructor_id) countBy[s.instructor_id] = (countBy[s.instructor_id] || 0) + 1; });
-
   return {
-    instructors: ins.map(i => mapInstructor(i, countBy[i.id] || 0)),
+    instructors: ins.map(mapInstructor),
     vehicles: veh.map(mapVehicle),
-    students: stu.map(s => mapStudent(s, { usedCount: usedBy[s.id] || 0, paidSum: paidBy[s.id] || 0 })),
-    lessons: les.map(l => mapLesson(l, monday)),
+    students: stu.map(mapStudent),
+    lessons: les.map(mapLesson),
     payments: pay.map(mapPayment).reverse(),
     exams: exa.map(mapExam),
     courses: cou.map(mapCourse),
@@ -131,158 +115,90 @@ export async function fetchSchoolBundle(schoolId, monday) {
 }
 
 export async function fetchProfile(userId) {
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-  if (error) throw error;
-  return data; // null → account not provisioned yet (caller self-heals via ensure_account)
-}
-
-// Anonymous-friendly directory for the landing page.
-export async function fetchPublicSchools() {
-  const { data, error } = await supabase.from('public_schools').select('*').order('name');
-  if (error) throw error;
-  return data.map(s => ({
-    id: s.id, name: s.name, city: s.city || '—', address: s.address || '',
-    phone: s.phone || '', cats: s.cats || [], logo: s.logo_url,
-    mapsUrl: s.maps_url || '',
-    hoursStart: s.hours_start || '08:00', hoursEnd: s.hours_end || '18:00',
-    workingDays: s.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-    joined: s.joined, students: s.students, instructors: s.instructors, vehicles: s.vehicles,
-  }));
+  return run(() => supabase.from('profiles').select('*').eq('id', userId).maybeSingle(), undefined, notifyRetry);
 }
 
 export async function fetchSchool(schoolId) {
-  const { data, error } = await supabase.from('schools').select('*').eq('id', schoolId).single();
-  if (error) throw error;
+  const s = await run(() => supabase.from('schools').select('*').eq('id', schoolId).single(), undefined, notifyRetry);
   return {
-    id: data.id, name: data.name, bizNumber: data.biz_number, address: data.address,
-    city: data.city, phone: data.phone, logo: data.logo_url, cats: data.cats,
-    plan: data.plan, status: data.status,
-    mapsUrl: data.maps_url || '',
-    hoursStart: data.hours_start || '08:00', hoursEnd: data.hours_end || '18:00',
-    workingDays: data.working_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+    ...mapSchoolCommon(s), bizNumber: s.biz_number || '',
+    plan: PLAN_ALIAS[s.plan] || s.plan, status: s.status, listed: s.listed !== false,
   };
 }
 
-// Super-admin: aggregated stats for every school on the platform.
+export async function fetchPublicSchools() {
+  const data = await run(() => supabase.from('public_schools').select('*').order('name'));
+  return data.map(s => ({ ...mapSchoolCommon(s), joined: s.joined, students: s.students, instructors: s.instructors, vehicles: s.vehicles }));
+}
+
 export async function fetchPlatformStats() {
-  const { data, error } = await supabase.from('platform_school_stats').select('*').order('joined');
-  if (error) throw error;
+  const data = await run(() => supabase.from('platform_school_stats').select('*').order('joined'));
   const schools = data.map(s => ({
     id: s.id, name: s.name, city: s.city || '—', bizNumber: s.biz_number || '—',
-    plan: s.plan, status: s.status, joined: s.joined,
-    students: s.students, activeStudents: s.active_students,
-    instructors: s.instructors, vehicles: s.vehicles,
+    plan: PLAN_ALIAS[s.plan] || s.plan, status: s.status, joined: s.joined,
+    students: s.students, activeStudents: s.active_students, instructors: s.instructors, vehicles: s.vehicles,
     lessonsThisMonth: s.lessons_this_month, examsThisMonth: s.exams_this_month,
-    examPassRate: s.exam_pass_rate, mrr: Number(s.mrr),
-    revenueYtd: Number(s.revenue_ytd), cats: s.cats || [],
-    lastActive: s.last_active || s.joined,
+    examPassRate: s.exam_pass_rate, mrr: Number(s.mrr), revenueYtd: Number(s.revenue_ytd),
+    cats: s.cats || [], lastActive: s.last_active || s.joined,
   }));
-  // 6-month signup / MRR trend derived from join dates
-  const trend = [];
-  const now = new Date();
-  for (let k = 5; k >= 0; k--) {
-    const end = new Date(now.getFullYear(), now.getMonth() - k + 1, 1);
-    const inRange = schools.filter(s => parseDate(s.joined) < end);
-    trend.push({
-      month: new Date(now.getFullYear(), now.getMonth() - k, 1).toLocaleString('en', { month: 'short' }),
-      schools: inRange.length,
-      mrr: inRange.reduce((a, s) => a + s.mrr, 0),
-    });
-  }
-  return { schools, trend };
+  return { schools, trend: platformTrend(schools) };
 }
 
-// ---- writes ------------------------------------------------------------------
+// ---- writes -------------------------------------------------------------------------
+const ins = (table, payload) => run((b) => supabase.from(table).insert(b).select().single(), payload, notifyRetry);
+const insMany = (table, list) => run(() => supabase.from(table).insert(list).select(), undefined, notifyRetry);
+const upd = (table, id, patch) => run((b) => supabase.from(table).update(b).eq('id', id), patch, notifyRetry);
+const del = (table, id) => run(() => supabase.from(table).delete().eq('id', id), undefined, notifyRetry);
 
-async function ins(table, payload) {
-  const { data, error } = await supabase.from(table).insert(payload).select().single();
-  if (error) throw error;
-  return data;
-}
+const lessonRow = (schoolId, m) => ({
+  school_id: schoolId, student_id: m.studentId, instructor_id: m.instructorId,
+  vehicle_id: m.vehicleId || null, lesson_date: m.date, hour: m.hour,
+  type: m.type || 'city', pickup: m.pickup || '', status: 'scheduled',
+});
 
-async function upd(table, id, patch) {
-  const { error } = await supabase.from(table).update(patch).eq('id', id);
-  if (error) throw error;
-}
-
-async function del(table, id) {
-  const { error } = await supabase.from(table).delete().eq('id', id);
-  if (error) throw error;
-}
+const studentRow = (s) => ({
+  name: s.name, email: s.email || null, phone: s.phone || '', cat: s.cat || 'B',
+  instructor_id: s.instructorId || null, total: s.total, price: s.price,
+  package_name: s.packageName || null, notes: s.notes ?? undefined,
+});
 
 export const db = {
-  insertLesson: (schoolId, m) => ins('lessons', {
-    school_id: schoolId, student_id: m.studentId, instructor_id: m.instructorId,
-    vehicle_id: m.vehicleId, lesson_date: m.date, hour: m.hour,
-    type: m.type || 'city', pickup: m.pickup || 'Qendra', status: 'scheduled',
-  }),
+  insertLessons: (schoolId, list) => insMany('lessons', list.map(m => lessonRow(schoolId, m))),
   updateLesson: (id, patch) => upd('lessons', id, patch),
   deleteLesson: (id) => del('lessons', id),
 
-  insertStudent: (schoolId, s) => ins('students', {
-    school_id: schoolId, name: s.name, email: s.email || null, phone: s.phone || '',
-    cat: s.cat || 'B', instructor_id: s.instructorId || null,
-    total: s.total, price: s.price,
-  }),
-  updateStudent: (id, patch) => upd('students', id, {
-    name: patch.name, email: patch.email || null, phone: patch.phone || '',
-    cat: patch.cat, instructor_id: patch.instructorId || null,
-    total: patch.total, price: patch.price,
-  }),
+  insertStudent: (schoolId, s) => ins('students', { school_id: schoolId, ...studentRow(s) }),
+  updateStudent: (id, s) => upd('students', id, studentRow(s)),
+  updateStudentFields: (id, patch) => upd('students', id, patch),
   deleteStudent: (id) => del('students', id),
 
-  insertPayment: (schoolId, p) => ins('payments', {
-    school_id: schoolId, student_id: p.studentId, date: p.date,
-    amount: p.amount, method: p.method, note: p.note || '',
-  }),
+  insertPayment: (schoolId, p) => ins('payments', { school_id: schoolId, student_id: p.studentId, date: p.date, amount: p.amount, method: p.method, note: p.note || '' }),
   deletePayment: (id) => del('payments', id),
 
-  insertInstructor: (schoolId, i) => ins('instructors', {
-    school_id: schoolId, name: i.name, email: i.email || null, phone: i.phone || '',
-    cat: i.cat || 'B', color: i.color || '#0f9d6b', vehicle_id: i.vehicleId || null,
-  }),
-  updateInstructor: (id, patch) => upd('instructors', id, {
-    name: patch.name, email: patch.email || null, phone: patch.phone || '',
-    cat: patch.cat, color: patch.color, vehicle_id: patch.vehicleId || null,
-  }),
+  insertInstructor: (schoolId, i) => ins('instructors', { school_id: schoolId, name: i.name, email: i.email || null, phone: i.phone || '', cat: i.cat || 'B', color: i.color, vehicle_id: i.vehicleId || null }),
+  updateInstructor: (id, i) => upd('instructors', id, { name: i.name, email: i.email || null, phone: i.phone || '', cat: i.cat, color: i.color, vehicle_id: i.vehicleId || null }),
   deleteInstructor: (id) => del('instructors', id),
 
-  insertVehicle: (schoolId, v) => ins('vehicles', {
-    school_id: schoolId, name: v.name, plate: v.plate, cat: v.cat || 'B',
-    year: v.year || null, reg: v.reg || null, ins: v.ins || null,
-    km: v.km || 0, status: v.status || 'available', service: v.service || null,
-  }),
-  updateVehicle: (id, patch) => upd('vehicles', id, {
-    name: patch.name, plate: patch.plate, cat: patch.cat,
-    year: patch.year || null, reg: patch.reg || null, ins: patch.ins || null,
-    km: patch.km || 0, status: patch.status || 'available', service: patch.service || null,
-  }),
+  insertVehicle: (schoolId, v) => ins('vehicles', { school_id: schoolId, name: v.name, plate: v.plate, cat: v.cat || 'B', year: v.year || null, reg: v.reg || null, ins: v.ins || null, km: v.km || 0, status: v.status || 'available', service: v.service || null }),
+  updateVehicle: (id, v) => upd('vehicles', id, { name: v.name, plate: v.plate, cat: v.cat, year: v.year || null, reg: v.reg || null, ins: v.ins || null, km: v.km || 0, status: v.status || 'available', service: v.service || null }),
   deleteVehicle: (id) => del('vehicles', id),
 
-  insertExam: (schoolId, e) => ins('exams', {
-    school_id: schoolId, student_id: e.studentId, type: e.type, date: e.date,
-    status: e.status || 'scheduled',
-  }),
+  insertExam: (schoolId, e) => ins('exams', { school_id: schoolId, student_id: e.studentId, type: e.type, date: e.date, status: e.status || 'scheduled' }),
   updateExam: (id, patch) => upd('exams', id, patch),
   deleteExam: (id) => del('exams', id),
 
-  saveCourse: async (schoolId, c, isNew) => {
+  saveCourse: (schoolId, c, isNew) => {
     const payload = { school_id: schoolId, title: c.title, descr: c.desc, questions: c.questions };
-    if (isNew) return ins('courses', payload);
-    return upd('courses', c.id, payload);
+    return isNew ? ins('courses', payload) : upd('courses', c.id, payload);
   },
   deleteCourse: (id) => del('courses', id),
 
-  markAllNotifsRead: async (schoolId) => {
-    const { error } = await supabase.from('notifications').update({ read: true })
-      .eq('school_id', schoolId).eq('read', false);
-    if (error) throw error;
-  },
-  insertNotification: (schoolId, n) => ins('notifications', { school_id: schoolId, ...n }),
+  markAllNotifsRead: (schoolId) => run(() => supabase.from('notifications').update({ read: true }).eq('school_id', schoolId).eq('read', false), undefined, notifyRetry),
 
-  updateSchool: async (id, s) => upd('schools', id, {
-    name: s.name, phone: s.phone, city: s.city, address: s.address,
-    maps_url: s.mapsUrl,
+  updateSchool: (id, s) => upd('schools', id, {
+    name: s.name, phone: s.phone, city: s.city, address: s.address, maps_url: s.mapsUrl, cats: s.cats,
     hours_start: s.hoursStart, hours_end: s.hoursEnd, working_days: s.workingDays,
+    listed: s.listed, accept_enrollments: s.acceptEnrollments, packages: s.packages,
   }),
+  updateSchoolAdmin: (id, patch) => upd('schools', id, patch),
 };

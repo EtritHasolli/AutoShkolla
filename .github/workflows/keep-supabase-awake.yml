@@ -1,0 +1,40 @@
+name: Keep Supabase awake
+
+# Free Supabase projects pause after ~7 days without activity, and a paused
+# project can eventually be deleted. This pings the database once a day.
+#
+# Setup (once): GitHub repo → Settings → Secrets and variables → Actions →
+#   SUPABASE_URL       https://<project-ref>.supabase.co
+#   SUPABASE_ANON_KEY  the anon public key (Project Settings → API)
+# Then run it once by hand: Actions → Keep Supabase awake → Run workflow.
+
+on:
+  schedule:
+    - cron: '23 5 * * *'   # every day, 05:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write           # lets the last step keep this schedule enabled
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Ping Supabase
+        run: node scripts/keepalive.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      # GitHub switches off scheduled workflows after 60 days without commits
+      # (public repos). Re-enabling through the API resets that clock.
+      - name: Keep this schedule enabled
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/keep-supabase-awake.yml/enable"
+        env:
+          GH_TOKEN: ${{ github.token }}

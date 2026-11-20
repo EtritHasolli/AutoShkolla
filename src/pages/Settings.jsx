@@ -1,112 +1,87 @@
 import React, { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
-import { C, font } from '../data/seed.js';
+import { Card, Button, Field, Input, Select, Switch, SettingRow, Badge, PageHeader, Choices, LinkButton } from '../components/ui.jsx';
+import { LangToggle } from '../components/Shell.jsx';
+import { KOSOVO_CITIES } from '../data/cities.js';
+import { DAY_KEYS, dayShort } from '../lib/format.js';
+import { PLANS, LICENCE_CATS } from '../lib/brand.js';
 
-const DEV_VIEWS = [['owner', 'Owner'], ['instructor', 'Instructor'], ['student', 'Student'], ['superadmin', 'Super admin']];
+const DEV_VIEWS = [['owner', 'owner'], ['administrator', 'administrator'], ['receptionist', 'receptionist'], ['instructor', 'role_instructor'], ['student', 'role_student'], ['superadmin', 'superadmin']];
 
 export default function Settings() {
-  const { lang, setLang, school, updateSchoolProfile, role, T, isDevSuperadmin, devSwitchView } = useApp();
-  const [name, setName] = useState(school?.name || 'Autoshkolla Prishtina');
-  const [phone, setPhone] = useState(school?.phone || '+383 38 224 100');
-  const [city, setCity] = useState(school?.city || 'Prishtinë');
-  const [address, setAddress] = useState(school?.address || 'Rr. Nëna Terezë 24');
-  const [mapsUrl, setMapsUrl] = useState(school?.mapsUrl || '');
-  const [hoursStart, setHoursStart] = useState(school?.hoursStart || '08:00');
-  const [hoursEnd, setHoursEnd] = useState(school?.hoursEnd || '18:00');
-  const [workingDays, setWorkingDays] = useState(school?.workingDays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-  const canEdit = ['owner', 'administrator'].includes(role);
-  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const toggleDay = (d) => setWorkingDays(ds => ds.includes(d) ? ds.filter(x => x !== d) : [...ds, d]);
+  const { school, updateSchool, role, T, lang, isDevAccount, devSwitchView, exportCSV, live } = useApp();
+  const canEdit = role === 'owner' || role === 'administrator';
+  const [f, setF] = useState(() => ({
+    name: school?.name || '', phone: school?.phone || '', city: school?.city || '', address: school?.address || '',
+    mapsUrl: school?.mapsUrl || '', hoursStart: school?.hoursStart || '08:00', hoursEnd: school?.hoursEnd || '18:00',
+    workingDays: school?.workingDays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], cats: school?.cats || ['B'],
+  }));
+  const set = (p) => setF(prev => ({ ...prev, ...p }));
+  const [busy, setBusy] = useState(false);
+  const plan = PLANS.find(p => p.id === school?.plan);
+  const cityOpts = [{ v: '', l: T('select_city') }, ...[...new Set([...KOSOVO_CITIES, f.city].filter(Boolean))].map(c => ({ v: c, l: c }))];
 
-  function Card({ title, children }) {
-    return (
-      <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid ' + C.line2 }}>
-          <div style={{ fontFamily: font.disp, fontWeight: 600, fontSize: 14.5, color: C.ink }}>{title}</div>
-        </div>
-        <div style={{ padding: '16px 18px' }}>{children}</div>
-      </div>
-    );
-  }
-
-  function Field({ label, children }) {
-    return (
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.ink2, marginBottom: 6 }}>{label}</div>
-        {children}
-      </div>
-    );
-  }
-
-  const inp = { width: '100%', border: '1px solid ' + C.line, background: C.surf, color: C.ink, fontSize: 13.5, padding: '10px 12px', borderRadius: 9, outline: 'none' };
+  async function save() { setBusy(true); await updateSchool(f); setBusy(false); }
 
   return (
-    <div style={{ padding: '22px 26px 40px', maxWidth: 680, animation: 'df-fade .25s' }}>
-      <Card title="School profile">
-        <Field label="School name"><input value={name} onChange={e => setName(e.target.value)} disabled={!canEdit} style={inp} /></Field>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1 }}><Field label={T('phone')}><input value={phone} onChange={e => setPhone(e.target.value)} disabled={!canEdit} style={inp} /></Field></div>
-          <div style={{ flex: 1 }}><Field label="City"><input value={city} onChange={e => setCity(e.target.value)} disabled={!canEdit} style={inp} /></Field></div>
+    <div className="page page-narrow">
+      <PageHeader title={T('settings')} />
+
+      <Card title={T('school_profile')} style={{ marginBottom: 16 }}>
+        <Field label={T('school_name')}><Input value={f.name} disabled={!canEdit} onChange={e => set({ name: e.target.value })} /></Field>
+        <div className="form-row">
+          <Field label={T('phone')}><Input type="tel" value={f.phone} disabled={!canEdit} onChange={e => set({ phone: e.target.value })} /></Field>
+          <Field label={T('city')}><Select value={f.city} disabled={!canEdit} onChange={e => set({ city: e.target.value })} options={cityOpts} /></Field>
         </div>
-        <Field label="Address"><input value={address} onChange={e => setAddress(e.target.value)} disabled={!canEdit} style={inp} /></Field>
-        <Field label="Google Maps link (optional)">
-          <input value={mapsUrl} onChange={e => setMapsUrl(e.target.value)} disabled={!canEdit} placeholder="https://maps.google.com/…" style={inp} />
+        <Field label={T('address')}><Input value={f.address} disabled={!canEdit} onChange={e => set({ address: e.target.value })} /></Field>
+        <Field label={T('maps_link')}><Input value={f.mapsUrl} disabled={!canEdit} onChange={e => set({ mapsUrl: e.target.value })} placeholder="https://maps.app.goo.gl/…" /></Field>
+        <Field label={T('categories_offered')}>
+          <Choices multi chip value={f.cats} onChange={v => canEdit && v.length && set({ cats: v })} options={LICENCE_CATS.map(c => ({ v: c, l: c }))} />
         </Field>
-        {canEdit && (
-          <button onClick={() => updateSchoolProfile({ name, phone, city, address, mapsUrl, hoursStart, hoursEnd, workingDays })}
-            style={{ border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 18px', borderRadius: 9, cursor: 'pointer' }}>
-            {T('save')}
-          </button>
-        )}
-      </Card>
-      <Card title="Preferences">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid ' + C.line2, flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>Language</span>
-          <div style={{ display: 'flex', gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
-            {[['en', 'EN'], ['sq', 'SQ']].map(([v, l]) => (
-              <button key={v} onClick={() => setLang(v)} style={{ border: 'none', background: lang === v ? C.pri : 'transparent', color: lang === v ? '#fff' : C.mut, fontSize: 12.5, fontWeight: 600, padding: '6px 14px', borderRadius: 6 }}>{l}</button>
-            ))}
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid ' + C.line2, flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>Working hours</span>
-          {canEdit ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input type="time" value={hoursStart} onChange={e => setHoursStart(e.target.value)} style={{ ...inp, width: 120, fontFamily: font.mono, fontWeight: 600 }} />
-              <span style={{ color: C.mut }}>–</span>
-              <input type="time" value={hoursEnd} onChange={e => setHoursEnd(e.target.value)} style={{ ...inp, width: 120, fontFamily: font.mono, fontWeight: 600 }} />
+        <div className="form-row">
+          <Field label={T('working_hours')}>
+            <div className="row" style={{ gap: 8 }}>
+              <Input type="time" value={f.hoursStart} disabled={!canEdit} onChange={e => set({ hoursStart: e.target.value })} />
+              <span className="muted">–</span>
+              <Input type="time" value={f.hoursEnd} disabled={!canEdit} onChange={e => set({ hoursEnd: e.target.value })} />
             </div>
-          ) : (
-            <span style={{ fontSize: 13.5, color: C.mut, fontWeight: 600, fontFamily: font.mono }}>{hoursStart} – {hoursEnd}</span>
-          )}
+          </Field>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>Working days</span>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {DAYS.map(d => {
-              const on = workingDays.includes(d);
-              return (
-                <button key={d} onClick={() => canEdit && toggleDay(d)} disabled={!canEdit}
-                  style={{ border: 'none', background: on ? C.pri : C.bg, color: on ? '#fff' : C.mut, fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, cursor: canEdit ? 'pointer' : 'default' }}>
-                  {d}
-                </button>
-              );
-            })}
-          </div>
+        <Field label={T('working_days')}>
+          <Choices multi chip value={f.workingDays} onChange={v => canEdit && set({ workingDays: DAY_KEYS.filter(d => v.includes(d)) })} options={DAY_KEYS.map((d, i) => ({ v: d, l: dayShort(i, lang) }))} />
+        </Field>
+        {canEdit && <Button variant="primary" icon="check" loading={busy} onClick={save}>{T('save')}</Button>}
+      </Card>
+
+      <Card title={T('directory')} style={{ marginBottom: 16 }} extra={school?.id && <LinkButton size="sm" variant="ghost" icon="external" href={'#/school/' + school.id}>{T('directory')}</LinkButton>}>
+        <SettingRow title={T('listed')} hint={T('listed_hint')}>
+          <Switch on={school?.listed !== false} disabled={!canEdit} onChange={v => updateSchool({ listed: v })} />
+        </SettingRow>
+        <SettingRow title={T('accept_enroll')} hint={T('accept_enroll_hint')}>
+          <Switch on={school?.acceptEnrollments !== false} disabled={!canEdit} onChange={v => updateSchool({ acceptEnrollments: v })} />
+        </SettingRow>
+      </Card>
+
+      <Card title={T('preferences')} style={{ marginBottom: 16 }}>
+        <SettingRow title={T('language')}><LangToggle size="md" /></SettingRow>
+        <SettingRow title={T('plan')} hint={plan ? T('plan_instr', { n: plan.instructors }) : null}>
+          <Badge tone={school?.status === 'trial' ? 'amber' : 'brand'}>{school?.plan || '—'}{school?.status ? ' · ' + T(school.status) : ''}</Badge>
+        </SettingRow>
+      </Card>
+
+      <Card title={T('data_section')} style={{ marginBottom: 16 }}>
+        <p className="muted" style={{ marginBottom: 12 }}>{T('export_hint')}</p>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <Button variant="soft" icon="download" onClick={() => exportCSV('students')}>{T('students')}</Button>
+          <Button variant="soft" icon="download" onClick={() => exportCSV('lessons')}>{T('lessons')}</Button>
+          <Button variant="soft" icon="download" onClick={() => exportCSV('payments')}>{T('payments')}</Button>
         </div>
       </Card>
-      {isDevSuperadmin && (
-        <Card title="View as (testing)">
-          <div style={{ fontSize: 12.5, color: C.mut, marginBottom: 12 }}>
-            Only visible to the designated test account. Switches which portal/role you see — no data changes.
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {DEV_VIEWS.map(([v, label]) => (
-              <button key={v} onClick={() => devSwitchView(v)}
-                style={{ border: '1px solid ' + C.line, background: role === v ? C.pri : C.surf, color: role === v ? '#fff' : C.ink, fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 9, cursor: 'pointer' }}>
-                {label}
-              </button>
-            ))}
+
+      {(isDevAccount || !live) && (
+        <Card title={T('view_as')} sub={T('view_as_hint')}>
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            {DEV_VIEWS.map(([v, k]) => <Button key={v} size="sm" variant={role === v ? 'primary' : 'secondary'} onClick={() => devSwitchView(v)}>{T(k)}</Button>)}
           </div>
         </Card>
       )}

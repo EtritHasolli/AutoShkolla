@@ -1,407 +1,213 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../AppContext.jsx';
-import { Icon } from '../components/ui.jsx';
-import { C, font } from '../data/seed.js';
+import { Card, Stat, Badge, Button, Input, Segmented, Choices, Field, Ring, Logo, Avatar, Icon, Empty, KV, PageHeader, schoolTone } from '../components/ui.jsx';
+import { Banners, Toast, LangToggle } from '../components/Shell.jsx';
+import { euro, fmtDate, monthShort } from '../lib/format.js';
+import { PLANS } from '../lib/brand.js';
 import { useIsMobile } from '../hooks/useMediaQuery.js';
 
-/* ---------- helpers ---------- */
-function statusStyle(s) {
-  if (s === 'active')    return { color: C.grn, bg: C.grnBg, label: 'Active' };
-  if (s === 'trial')     return { color: C.amb, bg: C.ambBg, label: 'Trial' };
-  if (s === 'suspended') return { color: C.red, bg: C.redBg, label: 'Suspended' };
-  return { color: C.mut, bg: C.line2, label: s };
-}
-const euro = n => Number(n).toLocaleString('de-DE') + '€';
-const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-const fmtShort = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-
-/* ---------- small UI bits ---------- */
-function StatCard({ icon, color, value, label, sub }) {
-  return (
-    <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 16, padding: '18px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 11, background: color + '18', color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Icon name={icon} size={19} sw={1.8} />
-        </div>
-        <div style={{ fontSize: 12, color: C.mut, fontWeight: 600 }}>{label}</div>
-      </div>
-      <div style={{ fontFamily: font.disp, fontSize: 27, fontWeight: 700, color: C.ink, lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: C.grn, fontWeight: 600, marginTop: 6 }}>{sub}</div>}
-    </div>
-  );
-}
-
-function MiniBars({ data, accessor, color }) {
-  const max = Math.max(...data.map(accessor), 1);
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 120 }}>
-      {data.map((d, i) => (
-        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: '100%', display: 'flex', alignItems: 'flex-end', height: 92 }}>
-            <div style={{ width: '100%', height: (accessor(d) / max * 100) + '%', minHeight: 4, background: color, borderRadius: '6px 6px 0 0', transition: 'height .4s' }} />
-          </div>
-          <div style={{ fontSize: 11, color: C.mut, fontWeight: 600 }}>{d.month}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Ring({ pct, color, size = 64 }) {
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-      <div style={{ width: size, height: size, borderRadius: '50%', background: `conic-gradient(${color} ${pct}%, ${C.line} 0)` }} />
-      <div style={{ position: 'absolute', inset: 7, borderRadius: '50%', background: C.surf, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink }}>{pct}%</span>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Schools table (shared) ---------- */
 function SchoolsTable({ onOpen }) {
-  const { platform } = useApp();
-  const [search, setSearch] = useState('');
-  const [planFilter, setPlanFilter] = useState('all');
-
-  const filtered = platform.schools.filter(s => {
-    const m = s.name.toLowerCase().includes(search.toLowerCase()) || s.city.toLowerCase().includes(search.toLowerCase());
-    const p = planFilter === 'all' || s.plan === planFilter;
-    return m && p;
-  });
-
+  const { platform, T } = useApp();
+  const mobile = useIsMobile(860);
+  const [q, setQ] = useState('');
+  const [plan, setPlan] = useState('all');
+  const list = platform.schools.filter(s => (plan === 'all' || s.plan === plan) && (!q || (s.name + ' ' + s.city).toLowerCase().includes(q.toLowerCase())));
   return (
-    <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, overflow: 'hidden' }}>
-      <div style={{ padding: '18px 24px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ fontFamily: font.disp, fontSize: 16, fontWeight: 700, color: C.ink }}>Driving Schools</div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 4, background: C.bg, padding: 3, borderRadius: 9 }}>
-            {['all', 'Pro', 'Starter'].map(p => (
-              <button key={p} onClick={() => setPlanFilter(p)} style={{ border: 'none', background: planFilter === p ? C.surf : 'transparent', color: planFilter === p ? C.ink : C.mut, fontSize: 12.5, fontWeight: 600, padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontFamily: font.body, boxShadow: planFilter === p ? '0 1px 3px rgba(0,0,0,.08)' : 'none' }}>
-                {p === 'all' ? 'All' : p}
-              </button>
-            ))}
-          </div>
-          <div style={{ position: 'relative', width: '100%', maxWidth: 200 }}>
-            <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: C.mut, display: 'flex' }}><Icon name="search" size={15} sw={2} /></span>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search schools…"
-              style={{ border: '1px solid ' + C.line, background: C.bg, color: C.ink, fontSize: 13, padding: '8px 12px 8px 32px', borderRadius: 9, outline: 'none', fontFamily: font.body, width: '100%' }} />
-          </div>
-        </div>
-      </div>
-
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, minWidth: 880 }}>
-          <thead>
-            <tr style={{ background: C.bg }}>
-              {['School', 'Business no.', 'City', 'Students', 'Instr.', 'Vehicles', 'Pass rate', 'MRR', 'Status'].map(h => (
-                <th key={h} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.mut, letterSpacing: '.04em', textTransform: 'uppercase', borderBottom: '1px solid ' + C.line, whiteSpace: 'nowrap' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((s, i) => {
-              const st = statusStyle(s.status);
-              return (
-                <tr key={s.id} onClick={() => onOpen(s.id)} style={{ borderBottom: i < filtered.length - 1 ? '1px solid ' + C.line : 'none', cursor: 'pointer', transition: 'background .12s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = C.bg}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <td style={{ padding: '13px 18px', fontWeight: 600, color: C.ink, whiteSpace: 'nowrap' }}>{s.name}</td>
-                  <td style={{ padding: '13px 18px', color: C.ink2, fontFamily: font.mono, fontSize: 13 }}>{s.bizNumber}</td>
-                  <td style={{ padding: '13px 18px', color: C.ink2 }}>{s.city}</td>
-                  <td style={{ padding: '13px 18px', color: C.ink2 }}>{s.students}</td>
-                  <td style={{ padding: '13px 18px', color: C.ink2 }}>{s.instructors}</td>
-                  <td style={{ padding: '13px 18px', color: C.ink2 }}>{s.vehicles}</td>
-                  <td style={{ padding: '13px 18px', color: C.ink2 }}>{s.examPassRate}%</td>
-                  <td style={{ padding: '13px 18px', color: C.ink2, fontWeight: 600 }}>{euro(s.mrr)}</td>
-                  <td style={{ padding: '13px 18px' }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: st.color, background: st.bg, padding: '4px 10px', borderRadius: 7 }}>{st.label}</span>
-                  </td>
+    <Card flush title={T('schools_title')} extra={
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        {!mobile && <Segmented size="sm" value={plan} onChange={setPlan} options={[{ v: 'all', l: T('all') }, ...PLANS.map(p => ({ v: p.id, l: p.id }))]} />}
+        <div style={{ width: 180 }}><Input icon="search" value={q} onChange={e => setQ(e.target.value)} placeholder={T('search')} style={{ height: 34 }} /></div>
+      </div>}>
+      {!list.length ? <Empty icon="search" title={T('no_match')} /> : mobile ? list.map(s => (
+        <button key={s.id} className="row-item" onClick={() => onOpen(s.id)}>
+          <Avatar name={s.name} size={36} />
+          <div style={{ flex: 1, minWidth: 0 }}><div className="row-title">{s.name}</div><div className="row-sub">{s.city} · {s.plan} · {euro(s.mrr)}</div></div>
+          <Badge tone={schoolTone(s.status)} dot>{T(s.status)}</Badge>
+        </button>
+      )) : (
+        <div className="table-wrap">
+          <table className="table">
+            <thead><tr><th>{T('school_name')}</th><th>{T('city')}</th><th>{T('stat_students')}</th><th>{T('stat_instructors')}</th><th>{T('pass_rate')}</th><th>{T('plan')}</th><th>MRR</th><th>{T('status')}</th></tr></thead>
+            <tbody>
+              {list.map(s => (
+                <tr key={s.id} className="clickable" onClick={() => onOpen(s.id)}>
+                  <td style={{ fontWeight: 600, color: 'var(--ink)' }}>{s.name}</td>
+                  <td>{s.city}</td><td className="tnum">{s.students}</td><td className="tnum">{s.instructors}</td>
+                  <td className="tnum">{s.examPassRate}%</td><td>{s.plan}</td>
+                  <td className="tnum" style={{ fontWeight: 600 }}>{euro(s.mrr)}</td>
+                  <td><Badge tone={schoolTone(s.status)} dot>{T(s.status)}</Badge></td>
                 </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr><td colSpan={9} style={{ padding: '32px', textAlign: 'center', color: C.soft, fontSize: 13 }}>No schools match your search.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 
-/* ---------- Overview page ---------- */
 function Overview({ onOpen }) {
-  const { platform } = useApp();
-  const schools = platform.schools;
-  const totals = useMemo(() => {
-    const active = schools.filter(s => s.status === 'active');
-    return {
-      schools: schools.length,
-      activeSchools: active.length,
-      students: schools.reduce((a, s) => a + s.students, 0),
-      instructors: schools.reduce((a, s) => a + s.instructors, 0),
-      vehicles: schools.reduce((a, s) => a + s.vehicles, 0),
-      lessons: schools.reduce((a, s) => a + s.lessonsThisMonth, 0),
-      mrr: schools.reduce((a, s) => a + s.mrr, 0),
-      avgPass: Math.round(schools.reduce((a, s) => a + s.examPassRate, 0) / (schools.length || 1)),
-    };
-  }, [schools]);
-
-  const planCounts = useMemo(() => {
-    const c = { Pro: 0, Starter: 0 };
-    schools.forEach(s => { c[s.plan] = (c[s.plan] || 0) + 1; });
-    return c;
-  }, [schools]);
-
+  const { platform, T, lang } = useApp();
+  const S = platform.schools;
+  const tot = useMemo(() => ({
+    schools: S.length, active: S.filter(s => s.status === 'active').length,
+    students: S.reduce((a, s) => a + s.students, 0), instructors: S.reduce((a, s) => a + s.instructors, 0),
+    lessons: S.reduce((a, s) => a + s.lessonsThisMonth, 0), mrr: S.reduce((a, s) => a + s.mrr, 0),
+    pass: Math.round(S.reduce((a, s) => a + s.examPassRate, 0) / (S.length || 1)),
+  }), [S]);
+  const maxT = Math.max(1, ...platform.trend.map(t => t.schools));
   return (
     <>
-      <div style={{ fontFamily: font.disp, fontSize: 26, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Platform Overview</div>
-      <div style={{ fontSize: 14, color: C.mut, marginBottom: 28 }}>All registered driving schools on DriveFlow</div>
-
-      {/* KPI grid */}
-      <div className="df-grid-4" style={{ marginBottom: 16 }}>
-        <StatCard icon="dashboard"   color={C.pri}  value={totals.schools}     label="Total schools"    sub={`${totals.activeSchools} active`} />
-        <StatCard icon="students"    color={C.grn}  value={totals.students}    label="Total students" />
-        <StatCard icon="instructors" color={C.vio}  value={totals.instructors} label="Instructors" />
-        <StatCard icon="vehicles"    color={C.teal} value={totals.vehicles}    label="Vehicles" />
+      <PageHeader title={T('platform_overview')} sub={T('platform_sub')} />
+      <div className="grid-4" style={{ marginBottom: 14 }}>
+        <Stat label={T('total_schools')} value={tot.schools} sub={T('n_active', { n: tot.active })} icon="building" tone="brand" />
+        <Stat label={T('stat_students')} value={tot.students} sub={tot.instructors + ' ' + T('stat_instructors').toLowerCase()} icon="students" tone="violet" />
+        <Stat label={T('mrr')} value={euro(tot.mrr)} sub={T('arr') + ': ' + euro(tot.mrr * 12)} icon="euro" tone="green" />
+        <Stat label={T('lessons_this_month')} value={tot.lessons.toLocaleString('de-DE')} sub={T('avg_pass') + ': ' + tot.pass + '%'} icon="calendar" tone="teal" />
       </div>
-      <div className="df-grid-4" style={{ marginBottom: 32 }}>
-        <StatCard icon="calendar"  color={C.pri}  value={totals.lessons.toLocaleString('de-DE')} label="Lessons this month" />
-        <StatCard icon="exams"     color={C.amb}  value={totals.avgPass + '%'} label="Avg. exam pass rate" />
-        <StatCard icon="payments"  color={C.grn}  value={euro(totals.mrr)}     label="Monthly recurring rev." />
-        <StatCard icon="reports"   color={C.vio}  value={euro(totals.mrr * 12)} label="Annual run rate" />
-      </div>
-
-      {/* Charts row */}
-      <div className="df-grid-main" style={{ marginBottom: 32 }}>
-        <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, padding: '20px 24px' }}>
-          <div style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Growth</div>
-          <div style={{ fontSize: 12.5, color: C.mut, marginBottom: 18 }}>Schools onboarded over time</div>
-          <MiniBars data={platform.trend} accessor={d => d.schools} color={C.pri} />
-        </div>
-        <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, padding: '20px 24px' }}>
-          <div style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 18 }}>Plan breakdown</div>
-          {[['Pro', C.pri], ['Starter', C.amb]].map(([plan, col]) => {
-            const count = planCounts[plan] || 0;
-            const pct = Math.round(count / (totals.schools || 1) * 100);
-            return (
-              <div key={plan} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-                  <span style={{ fontWeight: 600, color: C.ink }}>{plan}</span>
-                  <span style={{ color: C.mut, fontWeight: 600 }}>{count} · {pct}%</span>
-                </div>
-                <div style={{ height: 8, background: C.line, borderRadius: 8, overflow: 'hidden' }}>
-                  <div style={{ width: pct + '%', height: '100%', background: col, borderRadius: 8 }} />
-                </div>
+      <div className="grid-main" style={{ marginBottom: 16 }}>
+        <Card title={T('growth')} sub={T('growth_sub')}>
+          <div className="row" style={{ alignItems: 'flex-end', gap: 2, height: 150, paddingTop: 18 }}>
+            {platform.trend.map((t, k) => (
+              <div key={k} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: 6 }}>
+                {k === platform.trend.length - 1 && <span className="tnum" style={{ fontSize: 12, fontWeight: 700 }}>{t.schools}</span>}
+                <div title={`${monthShort(t.m, lang)}: ${t.schools}`} style={{ width: '60%', maxWidth: 44, height: Math.max(3, t.schools / maxT * 110), background: 'var(--brand)', borderRadius: '4px 4px 0 0' }} />
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+          <div className="row" style={{ gap: 2, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
+            {platform.trend.map((t, k) => <div key={k} className="muted" style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 600 }}>{monthShort(t.m, lang)}</div>)}
+          </div>
+        </Card>
+        <Card title={T('plan_breakdown')}>
+          <div className="stack" style={{ gap: 14 }}>
+            {PLANS.map(p => {
+              const n = S.filter(s => s.plan === p.id).length;
+              return (
+                <div key={p.id}>
+                  <div className="row" style={{ justifyContent: 'space-between', marginBottom: 6, fontSize: 13.5 }}><b>{p.id}</b><span className="muted">{n} · {Math.round(n / (S.length || 1) * 100)}%</span></div>
+                  <div className="progress" style={{ height: 8 }}><span style={{ width: (n / (S.length || 1) * 100) + '%', background: 'var(--brand)' }} /></div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
-
-      {/* Schools table */}
       <SchoolsTable onOpen={onOpen} />
     </>
   );
 }
 
-/* ---------- School detail page ---------- */
 function SchoolDetail({ id, onBack }) {
-  const { platform } = useApp();
+  const { platform, T, lang, updateSchoolAdmin } = useApp();
   const s = platform.schools.find(x => x.id === id);
+  const [f, setF] = useState(() => ({ status: s?.status, plan: s?.plan, mrr: s?.mrr ?? 0 }));
   if (!s) return null;
-  const st = statusStyle(s.status);
-
   return (
     <>
-      <button onClick={onBack} style={{ border: 'none', background: 'none', color: C.mut, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 5, fontFamily: font.body }}>
-        <Icon name="chevL" size={16} sw={2} /> Back to overview
-      </button>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 15, background: '#0f9d6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Icon name="car2" size={28} sw={1.9} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ fontFamily: font.disp, fontSize: 24, fontWeight: 700, color: C.ink }}>{s.name}</div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: st.color, background: st.bg, padding: '4px 10px', borderRadius: 7 }}>{st.label}</span>
-          </div>
-          <div style={{ fontSize: 13.5, color: C.mut, marginTop: 3 }}>{s.city} · Business no. <span style={{ fontFamily: font.mono }}>{s.bizNumber}</span> · Joined {fmtDate(s.joined)}</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 12, color: C.mut, fontWeight: 600 }}>Plan</div>
-          <div style={{ fontFamily: font.disp, fontSize: 18, fontWeight: 700, color: s.plan === 'Pro' ? C.pri : C.amb }}>{s.plan}</div>
+      <Button variant="ghost" size="sm" icon="chevL" onClick={onBack} style={{ marginLeft: -8, marginBottom: 12 }}>{T('back_overview')}</Button>
+      <div className="row" style={{ gap: 14, marginBottom: 20, flexWrap: 'wrap' }}>
+        <Avatar name={s.name} size={56} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}><h1 className="page-title">{s.name}</h1><Badge tone={schoolTone(s.status)} dot>{T(s.status)}</Badge></div>
+          <div className="muted">{s.city} · {T('business_no')} <span className="mono">{s.bizNumber}</span> · {T('joined')} {fmtDate(s.joined, lang)}</div>
         </div>
       </div>
-
-      {/* Counts grid */}
-      <div className="df-grid-4" style={{ marginBottom: 16 }}>
-        <StatCard icon="students"    color={C.grn}  value={s.students}    label="Students"    sub={`${s.activeStudents} active`} />
-        <StatCard icon="instructors" color={C.vio}  value={s.instructors} label="Instructors" />
-        <StatCard icon="vehicles"    color={C.teal} value={s.vehicles}    label="Vehicles" />
-        <StatCard icon="calendar"    color={C.pri}  value={s.lessonsThisMonth} label="Lessons / month" />
+      <div className="grid-4" style={{ marginBottom: 16 }}>
+        <Stat label={T('stat_students')} value={s.students} sub={T('n_active', { n: s.activeStudents })} icon="students" tone="violet" />
+        <Stat label={T('stat_instructors')} value={s.instructors} icon="instructors" tone="brand" />
+        <Stat label={T('stat_vehicles')} value={s.vehicles} icon="car" tone="teal" />
+        <Stat label={T('lessons_this_month')} value={s.lessonsThisMonth} icon="calendar" tone="green" />
       </div>
-
-      <div className="df-grid-2" style={{ marginBottom: 16 }}>
-        {/* Exams card */}
-        <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, padding: '22px 24px', display: 'flex', alignItems: 'center', gap: 22 }}>
-          <Ring pct={s.examPassRate} color={s.examPassRate >= 70 ? C.grn : C.amb} size={84} />
-          <div>
-            <div style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Exam pass rate</div>
-            <div style={{ fontSize: 13, color: C.mut }}>{s.examsThisMonth} exams this month</div>
-            <div style={{ fontSize: 13, color: C.mut, marginTop: 2 }}>Categories: <span style={{ fontWeight: 600, color: C.ink2 }}>{s.cats.join(', ')}</span></div>
-          </div>
-        </div>
-
-        {/* Billing card */}
-        <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, padding: '22px 24px' }}>
-          <div style={{ fontFamily: font.disp, fontSize: 15, fontWeight: 700, color: C.ink, marginBottom: 16 }}>Billing</div>
-          <div style={{ display: 'flex', gap: 28 }}>
-            <div>
-              <div style={{ fontSize: 12, color: C.mut, fontWeight: 600, marginBottom: 4 }}>Monthly recurring</div>
-              <div style={{ fontFamily: font.disp, fontSize: 22, fontWeight: 700, color: C.ink }}>{euro(s.mrr)}</div>
+      <div className="grid-main">
+        <Card title={T('admin_actions')}>
+          <Field label={T('status')}><Choices value={f.status} onChange={v => setF(x => ({ ...x, status: v }))} options={['trial', 'active', 'suspended'].map(v => ({ v, l: T(v) }))} /></Field>
+          <Field label={T('plan')}><Choices value={f.plan} onChange={v => setF(x => ({ ...x, plan: v, mrr: x.status === 'active' ? PLANS.find(p => p.id === v).monthly : x.mrr }))} options={PLANS.map(p => ({ v: p.id, l: p.id }))} /></Field>
+          <Field label="MRR (€)"><Input type="number" min="0" value={f.mrr} onChange={e => setF(x => ({ ...x, mrr: Number(e.target.value) || 0 }))} /></Field>
+          <Button variant="primary" icon="check" onClick={() => updateSchoolAdmin(s.id, f)}>{T('save')}</Button>
+        </Card>
+        <div className="stack">
+          <Card title={T('pass_rate')}>
+            <div className="row" style={{ gap: 18 }}>
+              <Ring pct={s.examPassRate} size={88} color={s.examPassRate >= 70 ? 'var(--green)' : 'var(--amber)'}><b style={{ fontSize: 18 }}>{s.examPassRate}%</b></Ring>
+              <div className="muted">{T('exams_month', { n: s.examsThisMonth })}<br />{T('categories')}: <b style={{ color: 'var(--ink-2)' }}>{(s.cats || []).join(', ')}</b></div>
             </div>
-            <div>
-              <div style={{ fontSize: 12, color: C.mut, fontWeight: 600, marginBottom: 4 }}>Revenue YTD</div>
-              <div style={{ fontFamily: font.disp, fontSize: 22, fontWeight: 700, color: C.grn }}>{euro(s.revenueYtd)}</div>
-            </div>
-          </div>
+          </Card>
+          <Card title={T('billing')}>
+            <KV label="MRR" value={euro(s.mrr)} />
+            <KV label={T('revenue_ytd')} value={euro(s.revenueYtd)} />
+            <KV label={T('last_active')} value={fmtDate(s.lastActive, lang)} />
+          </Card>
         </div>
-      </div>
-
-      {/* Meta strip */}
-      <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 18, padding: '8px 24px' }}>
-        {[
-          ['Business registration number', s.bizNumber],
-          ['City', s.city],
-          ['License categories', s.cats.join(', ')],
-          ['Last active', fmtShort(s.lastActive)],
-          ['Subscription plan', s.plan],
-        ].map(([k, v], i, arr) => (
-          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '13px 0', borderBottom: i < arr.length - 1 ? '1px solid ' + C.line2 : 'none', fontSize: 13.5 }}>
-            <span style={{ color: C.mut, fontWeight: 500 }}>{k}</span>
-            <span style={{ color: C.ink, fontWeight: 600 }}>{v}</span>
-          </div>
-        ))}
       </div>
     </>
   );
 }
 
-/* ---------- Shell ---------- */
-const NAV = [
-  ['overview', 'dashboard', 'Overview'],
-  ['schools', 'students', 'Schools'],
-];
-
-const DEV_VIEWS = [['owner', 'Owner'], ['instructor', 'Instructor'], ['student', 'Student']];
-
-function SidebarPanel({ nav, setNav, openId, setOpenId, logout, user, onNavigate }) {
-  const { isDevSuperadmin, devSwitchView } = useApp();
-  return (
-    <div style={{ width: 230, maxWidth: '82vw', height: '100%', background: C.side, display: 'flex', flexDirection: 'column', flexShrink: 0, padding: '18px 14px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 20px' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
-          <Icon name="car2" size={20} sw={2} />
-        </div>
-        <div>
-          <div style={{ color: '#fff', fontFamily: font.disp, fontWeight: 700, fontSize: 16, letterSpacing: '-.02em' }}>DriveFlow</div>
-          <div style={{ color: C.sideMut, fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em', marginTop: -1 }}>SUPER ADMIN</div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-        {NAV.map(([key, icon, label]) => {
-          const active = nav === key;
-          return (
-            <button key={key} onClick={() => { setNav(key); setOpenId(null); onNavigate?.(); }} style={{
-              display: 'flex', alignItems: 'center', gap: 12, width: '100%', border: 'none',
-              background: active ? C.sideActive : 'transparent', color: active ? '#fff' : C.sideMut,
-              padding: '10px 13px', borderRadius: 10, fontSize: 13.5, fontWeight: active ? 600 : 500,
-              cursor: 'pointer', textAlign: 'left', fontFamily: font.body,
-            }}>
-              <span style={{ color: active ? '#34d399' : C.sideMut, display: 'flex' }}><Icon name={icon} size={18} sw={1.9} /></span>
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ borderTop: '1px solid ' + C.sideLine, paddingTop: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '6px 8px 10px' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#0f9d6b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, fontFamily: font.disp, flexShrink: 0 }}>{(user?.name || 'PA').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#fff', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Platform admin</div>
-            <div style={{ color: C.sideMut, fontSize: 10.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email || 'platform admin'}</div>
-          </div>
-        </div>
-        {isDevSuperadmin && (
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ color: C.sideMut, fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em', padding: '0 13px 6px' }}>VIEW AS (TESTING)</div>
-            {DEV_VIEWS.map(([v, label]) => (
-              <button key={v} onClick={() => devSwitchView(v)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', color: C.sideMut, padding: '8px 13px', borderRadius: 10, fontSize: 12.5, fontWeight: 500, cursor: 'pointer', textAlign: 'left', fontFamily: font.body }}>
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-        <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 'none', background: 'transparent', color: C.sideMut, padding: '9px 13px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: font.body }}>
-          <Icon name="logout" size={17} sw={1.8} /> Sign out
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function SuperAdmin() {
-  const { logout, user } = useApp();
+  const { T, user, logout, isDevAccount, devSwitchView, isDemo } = useApp();
+  const mobile = useIsMobile(1023);
   const [nav, setNav] = useState('overview');
   const [openId, setOpenId] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const open = (id) => { setOpenId(id); setNav('schools'); };
+  const navItems = [['overview', 'dashboard', T('overview_nav')], ['schools', 'building', T('schools_title')]];
 
-  function openSchool(id) { setOpenId(id); setNav('schools'); }
+  const content = (
+    <div className="page">
+      {nav === 'overview' && <Overview onOpen={open} />}
+      {nav === 'schools' && (openId ? <SchoolDetail key={openId} id={openId} onBack={() => setOpenId(null)} /> : <><PageHeader title={T('schools_title')} sub={T('platform_sub')} /><SchoolsTable onOpen={open} /></>)}
+    </div>
+  );
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: font.body }}>
-      {/* Static sidebar on desktop */}
-      {!isMobile && <SidebarPanel nav={nav} setNav={setNav} openId={openId} setOpenId={setOpenId} logout={logout} user={user} />}
-
-      {/* Drawer overlay on mobile */}
-      {isMobile && drawerOpen && (
-        <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(8,12,20,.5)', backdropFilter: 'blur(2px)', display: 'flex', animation: 'df-fade .18s' }}>
-          <div onClick={e => e.stopPropagation()} style={{ height: '100%', animation: 'df-drawer .22s cubic-bezier(.2,.8,.2,1)' }}>
-            <SidebarPanel nav={nav} setNav={setNav} openId={openId} setOpenId={setOpenId} logout={logout} user={user} onNavigate={() => setDrawerOpen(false)} />
+    <div className="app">
+      {!mobile && (
+        <aside className="sidebar">
+          <div className="sidebar-brand"><Logo size={36} sub="Super admin" /></div>
+          <nav className="sidebar-nav">
+            {navItems.map(([k, ic, l]) => (
+              <button key={k} className={'nav-item' + (nav === k ? ' active' : '')} onClick={() => { setNav(k); setOpenId(null); }}>
+                <span className="nav-ic"><Icon name={ic} size={19} /></span>{l}
+              </button>
+            ))}
+            {(isDevAccount || isDemo) && (
+              <>
+                <div className="sidebar-section">{T('view_as')}</div>
+                {[['owner', 'owner'], ['instructor', 'role_instructor'], ['student', 'role_student']].map(([v, k]) => (
+                  <button key={v} className="nav-item" onClick={() => devSwitchView(v)}><span className="nav-ic"><Icon name="eye" size={18} /></span>{T(k)}</button>
+                ))}
+              </>
+            )}
+          </nav>
+          <div className="sidebar-foot">
+            <div className="row" style={{ gap: 10, padding: '4px 6px' }}>
+              <Avatar name={user?.name || 'Admin'} size={34} />
+              <div style={{ flex: 1, minWidth: 0 }}><div className="truncate" style={{ fontWeight: 600, fontSize: 13.5 }}>Platform admin</div><div className="muted truncate" style={{ fontSize: 12 }}>{user?.email}</div></div>
+              <Button size="sm" variant="ghost" icon="logout" title={T('logout')} onClick={logout} />
+            </div>
           </div>
-        </div>
+        </aside>
       )}
-
-      {/* Content */}
-      <div style={{ flex: 1, background: C.bg, overflowY: 'auto', minWidth: 0 }}>
-        {isMobile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid ' + C.line, background: C.surf, position: 'sticky', top: 0, zIndex: 5 }}>
-            <button onClick={() => setDrawerOpen(true)} style={{ border: '1px solid ' + C.line, background: C.surf, color: C.ink2, width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
-              <Icon name="menu" size={19} sw={2} />
-            </button>
-            <div style={{ fontFamily: font.disp, fontWeight: 700, fontSize: 16, color: C.ink }}>DriveFlow · Super admin</div>
+      <div className="app-main">
+        <Banners />
+        {mobile ? (
+          <header className="topbar">
+            <Logo size={30} sub="Super admin" />
+            <span className="spacer" />
+            <LangToggle />
+            <Button size="sm" variant="ghost" icon="logout" onClick={logout} />
+          </header>
+        ) : (
+          <header className="topbar"><div className="topbar-title">{navItems.find(n => n[0] === nav)[2]}</div><span className="spacer" /><LangToggle /></header>
+        )}
+        {mobile && (
+          <div style={{ padding: '10px 16px 0' }}>
+            <Segmented value={nav} onChange={v => { setNav(v); setOpenId(null); }} options={navItems.map(([k, , l]) => ({ v: k, l }))} />
           </div>
         )}
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: isMobile ? '20px 16px 50px' : '36px 32px 60px' }}>
-          {nav === 'overview' && <Overview onOpen={openSchool} />}
-          {nav === 'schools' && (openId ? (
-            <SchoolDetail id={openId} onBack={() => setOpenId(null)} />
-          ) : (
-            <>
-              <div style={{ fontFamily: font.disp, fontSize: 26, fontWeight: 700, color: C.ink, marginBottom: 4 }}>Driving Schools</div>
-              <div style={{ fontSize: 14, color: C.mut, marginBottom: 28 }}>Click a school to view its full breakdown</div>
-              <SchoolsTable onOpen={openSchool} />
-            </>
-          ))}
-        </div>
+        <main className="app-scroll">{content}</main>
       </div>
+      <Toast />
     </div>
   );
 }

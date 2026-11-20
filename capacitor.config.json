@@ -1,0 +1,16 @@
+{
+  "appId": "com.autoshkolla.app",
+  "appName": "AutoShkolla",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#ffffff"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "LIGHT",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}

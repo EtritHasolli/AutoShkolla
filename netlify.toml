@@ -1,0 +1,20 @@
+# Website hosting on Netlify (free tier allows commercial use — see MVP Roadmap).
+# Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Site settings → Environment.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Hashed assets never change — cache them for a year.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Let the Android APK download with the right type.
+[[headers]]
+  for = "/downloads/*.apk"
+  [headers.values]
+    Content-Type = "application/vnd.android.package-archive"

@@ -1,82 +1,89 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
-import { Icon, Pill, btnGhostStyle } from '../components/ui.jsx';
-import { C, font } from '../data/seed.js';
+import { Card, Button, LinkButton, Empty, Avatar, ToneIcon, Badge, Segmented, PageHeader } from '../components/ui.jsx';
+import { hh, euro, fmtDay, addDays, whatsappLink } from '../lib/format.js';
+import { BRAND } from '../lib/brand.js';
+
+function relTime(iso, T, lang) {
+  if (!iso) return '';
+  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (lang === 'sq') return mins < 60 ? `${mins} min më parë` : mins < 1440 ? `${Math.round(mins / 60)} orë më parë` : `${Math.round(mins / 1440)} ditë më parë`;
+  return mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`;
+}
+
+function Reminders() {
+  const { lessons, data, T, lang, today, school } = useApp();
+  const [sent, setSent] = useState({});
+  const sch = school?.name || BRAND;
+  const tomorrow = addDays(today, 1);
+  const tmr = lessons.filter(l => l.date === tomorrow && l.status === 'scheduled').sort((a, b) => a.hour - b.hour);
+  const owing = data.students.filter(s => s.due > 0).sort((a, b) => b.due - a.due).slice(0, 15);
+  const exams = data.exams.filter(e => e.status === 'scheduled' && e.date >= today && e.date <= addDays(today, 7)).sort((a, b) => a.date.localeCompare(b.date));
+  const Row = ({ id, name, sub, phone, text }) => (
+    <div className="row-item">
+      <Avatar name={name} size={34} />
+      <div style={{ flex: 1, minWidth: 0 }}><div className="row-title">{name}</div><div className="row-sub">{sub}</div></div>
+      {sent[id] && <Badge tone="green">{T('sent')}</Badge>}
+      {phone ? <LinkButton size="sm" variant="whatsapp" icon="whatsapp" href={whatsappLink(phone, text)} onClick={() => setSent(s => ({ ...s, [id]: true }))}>{T('send_reminder')}</LinkButton>
+        : <span className="soft" style={{ fontSize: 12 }}>{T('no_phone')}</span>}
+    </div>
+  );
+  return (
+    <div className="stack">
+      <Card flush title={T('tomorrow_lessons')} sub={fmtDay(tomorrow, lang)} extra={<Badge>{tmr.length}</Badge>}>
+        {tmr.length ? tmr.map(l => {
+          const s = data.students.find(x => x.id === l.studentId);
+          if (!s) return null;
+          return <Row key={l.id} id={l.id} name={s.name} sub={hh(l.hour) + (l.pickup ? ' · ' + l.pickup : '')} phone={s.phone}
+            text={T('reminder_lesson_text', { name: s.name.split(' ')[0], when: T('tomorrow').toLowerCase(), time: hh(l.hour), pickup: l.pickup || '—', school: sch })} />;
+        }) : <Empty icon="calendar" title={T('nothing_to_remind')} />}
+      </Card>
+      <Card flush title={T('exam_reminders')} extra={<Badge>{exams.length}</Badge>}>
+        {exams.length ? exams.map(e => {
+          const s = data.students.find(x => x.id === e.studentId);
+          if (!s) return null;
+          return <Row key={e.id} id={e.id} name={s.name} sub={T(e.type + '_exam') + ' · ' + fmtDay(e.date, lang)} phone={s.phone}
+            text={T('reminder_exam_text', { name: s.name.split(' ')[0], type: T(e.type + '_exam').toLowerCase(), when: fmtDay(e.date, lang), school: sch })} />;
+        }) : <Empty icon="exams" title={T('nothing_to_remind')} />}
+      </Card>
+      <Card flush title={T('payment_reminders')} extra={<Badge>{owing.length}</Badge>}>
+        {owing.length ? owing.map(s => <Row key={s.id} id={'p' + s.id} name={s.name} sub={euro(s.due)} phone={s.phone}
+          text={T('reminder_payment_text', { name: s.name.split(' ')[0], amount: euro(s.due), school: sch })} />) : <Empty icon="checkCircle" title={T('no_debts')} />}
+      </Card>
+    </div>
+  );
+}
 
 export default function Notifications() {
-  const { notifs, markAllNotifsRead, T } = useApp();
-  const iconFor = {
-    reminder: ['clock', C.pri, C.priBg],
-    payment: ['euro', C.amb, C.ambBg],
-    cancel: ['x', C.red, C.redBg],
-    alert: ['alert', C.amb, C.ambBg],
-  };
-  const tplCols = { sent: [C.grn, C.grnBg], pending: [C.amb, C.ambBg], failed: [C.red, C.redBg] };
-  const templates = [
-    ['Lesson reminder', 'Sent 24h before each lesson', 'reminder'],
-    ['Payment reminder', 'When balance is overdue', 'payment'],
-    ['Cancellation notice', 'When a lesson is cancelled', 'cancel'],
-    ['Exam reminder', '3 days before exam', 'reminder'],
-  ];
-
-  function Card({ title, children, extra }) {
-    return (
-      <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 14, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid ' + C.line2 }}>
-          <div style={{ fontFamily: font.disp, fontWeight: 600, fontSize: 14.5, color: C.ink }}>{title}</div>{extra}
-        </div>
-        <div style={{ padding: '16px 18px' }}>{children}</div>
-      </div>
-    );
-  }
-
+  const { notifs, markAllNotifsRead, T, lang } = useApp();
+  const [tab, setTab] = useState('reminders');
+  const unread = notifs.filter(n => !n.read).length;
+  const ic = { reminder: ['bell', 'brand'], payment: ['euro', 'green'], cancel: ['x', 'red'], alert: ['alert', 'amber'] };
   return (
-    <div className="df-grid-main" style={{ padding: '22px 26px 40px', animation: 'df-fade .25s' }}>
-      <Card title={T('notifications')} extra={
-        <button onClick={markAllNotifsRead} style={{ ...btnGhostStyle(), fontSize: 12 }}>Mark all read</button>
-      }>
-        {notifs.map(n => {
-          const ic = iconFor[n.type];
-          const tc = tplCols[n.status];
-          return (
-            <div key={n.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 13, padding: '13px 0', borderBottom: '1px solid ' + C.line2, opacity: n.read ? 0.7 : 1 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: ic[2], color: ic[1], display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon name={ic[0]} size={18} sw={2} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{n.title}</span>
-                  {!n.read && <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.pri }} />}
-                </div>
-                <div style={{ fontSize: 13, color: C.ink2, marginTop: 2 }}>{n.body}</div>
-                <div style={{ fontSize: 11.5, color: C.soft, marginTop: 3 }}>{n.time}</div>
-              </div>
-              <Pill text={n.status} color={tc[0]} bg={tc[1]} />
-            </div>
-          );
-        })}
-      </Card>
-      <Card title="Templates">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {templates.map((t, idx) => {
-            const ic = iconFor[t[2]];
+    <div className="page page-narrow" style={{ maxWidth: 860 }}>
+      <PageHeader title={T('notifications')} sub={T('reminders_sub')} />
+      <div className="toolbar">
+        <Segmented value={tab} onChange={setTab} options={[{ v: 'reminders', l: T('reminders'), icon: 'whatsapp' }, { v: 'inbox', l: T('notifications') + (unread ? ` (${unread})` : '') }]} />
+        <span className="spacer" />
+        {tab === 'inbox' && unread > 0 && <Button size="sm" icon="check" onClick={markAllNotifsRead}>{T('mark_all_read')}</Button>}
+      </div>
+      {tab === 'reminders' ? <Reminders /> : (
+        <Card flush>
+          {notifs.length ? notifs.map(n => {
+            const [icon, tone] = ic[n.type] || ic.reminder;
             return (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 13px', border: '1px solid ' + C.line, borderRadius: 11 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: ic[2], color: ic[1], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name={ic[0]} size={17} sw={2} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: C.ink }}>{t[0]}</div>
-                  <div style={{ fontSize: 11.5, color: C.mut }}>{t[1]}</div>
-                </div>
-                <div style={{ width: 34, height: 18, borderRadius: 10, background: C.grn, position: 'relative' }}>
-                  <div style={{ position: 'absolute', right: 2, top: 2, width: 14, height: 14, borderRadius: '50%', background: '#fff' }} />
+              <div key={n.id} className="row-item" style={{ alignItems: 'flex-start', opacity: n.read ? 0.7 : 1 }}>
+                <ToneIcon name={icon} tone={tone} size={36} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="row" style={{ gap: 8 }}><span style={{ fontWeight: 650 }}>{n.title}</span>{!n.read && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--brand)' }} />}</div>
+                  <div style={{ color: 'var(--ink-2)', fontSize: 13.5, marginTop: 1 }}>{n.body}</div>
+                  <div className="soft" style={{ fontSize: 12, marginTop: 3 }}>{relTime(n.createdAt, T, lang)}</div>
                 </div>
               </div>
             );
-          })}
-        </div>
-      </Card>
+          }) : <Empty icon="bell" title={T('no_notifications')} />}
+        </Card>
+      )}
     </div>
   );
 }

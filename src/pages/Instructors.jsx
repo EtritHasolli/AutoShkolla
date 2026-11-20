@@ -1,54 +1,54 @@
 import React from 'react';
 import { useApp } from '../AppContext.jsx';
-import { Icon } from '../components/ui.jsx';
-import { C, font } from '../data/seed.js';
+import { Card, Avatar, Button, LinkButton, Empty, Icon, Badge, PageHeader } from '../components/ui.jsx';
+import { sameMonth, telLink, whatsappLink } from '../lib/format.js';
 
 export default function Instructors() {
-  const { data, lessons, todayIdx, showToast, openModal, T } = useApp();
+  const { data, lessons, today, T, openModal, setCalFilterI, setCalView, go } = useApp();
   return (
-    <div style={{ padding: '22px 26px 40px', animation: 'df-fade .25s' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ flex: 1 }} />
-        <button onClick={() => openModal({ type: 'instructor' })} style={{ display: 'flex', alignItems: 'center', gap: 7, border: 'none', background: C.pri, color: '#fff', fontSize: 13, fontWeight: 600, padding: '9px 14px', borderRadius: 9 }}>
-          <Icon name="plus" size={16} sw={2.2} /> Add instructor
-        </button>
-      </div>
-      <div className="df-grid-2">
-        {data.instructors.map(i => {
-          const v = data.vehicles.find(x => x.id === i.vehicle);
-          const todays = lessons.filter(l => l.instructorId === i.id && l.day === todayIdx);
-          const myStu = data.students.filter(s => s.instructorId === i.id);
-          const initials = i.name.split(' ').map(w => w[0]).join('');
-          return (
-            <div key={i.id} style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 15, overflow: 'hidden' }}>
-              <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid ' + C.line2 }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: i.color + '1f', color: i.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 19, fontFamily: font.disp }}>{initials}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: font.disp, fontSize: 16.5, fontWeight: 700, color: C.ink }}>{i.name}</div>
-                  <div style={{ fontSize: 12.5, color: C.mut, display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                    <span>Cat. {i.cat}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 3, color: C.amb }}><Icon name="star" size={13} sw={2} />{i.rating}</span>
+    <div className="page">
+      <PageHeader title={T('instructors')} sub={T('kpi_n_students', { n: data.students.length })}
+        actions={<Button variant="primary" icon="plus" onClick={() => openModal({ type: 'instructor' })}>{T('add_instructor')}</Button>} />
+      {!data.instructors.length ? (
+        <Card><Empty icon="instructors" title={T('no_instructors')} text={T('no_instructors_text')} action={<Button variant="primary" icon="plus" onClick={() => openModal({ type: 'instructor' })}>{T('add_instructor')}</Button>} /></Card>
+      ) : (
+        <div className="grid-auto">
+          {data.instructors.map(i => {
+            const v = data.vehicles.find(x => x.id === i.vehicle);
+            const todays = lessons.filter(l => l.instructorId === i.id && l.date === today && l.status !== 'cancelled').length;
+            const month = lessons.filter(l => l.instructorId === i.id && l.status === 'completed' && sameMonth(l.date, today)).length;
+            return (
+              <div key={i.id} className="card" style={{ overflow: 'hidden' }}>
+                <div className="row" style={{ gap: 12, padding: 16 }}>
+                  <Avatar name={i.name} color={i.color} size={48} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="truncate" style={{ fontWeight: 700, fontSize: 15.5 }}>{i.name}</div>
+                    <div className="row" style={{ gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                      <Badge tone="brand">{T('category')} {i.cat}</Badge>
+                      {i.profileId && <Badge tone="green"><Icon name="smartphone" size={12} />App</Badge>}
+                    </div>
                   </div>
+                  <Button size="sm" variant="ghost" icon="edit" title={T('edit')} onClick={() => openModal({ type: 'instructor', editId: i.id })} />
                 </div>
-                <button onClick={() => openModal({ type: 'instructor', editId: i.id })} style={{ width: 38, height: 38, borderRadius: 10, border: 'none', background: C.priBg, color: C.pri, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                  <Icon name="edit" size={17} sw={1.9} />
-                </button>
-                <a href="tel:" onClick={e => { e.preventDefault(); showToast(T('call') + ' ' + i.phone); }} style={{ width: 38, height: 38, borderRadius: 10, background: C.grnBg, color: C.grn, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', flexShrink: 0 }}>
-                  <Icon name="phone" size={18} sw={1.9} />
-                </a>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '1px solid var(--line-2)', borderBottom: '1px solid var(--line-2)' }}>
+                  {[[i.students, T('students')], [todays, T('lessons_today')], [month, T('lessons_month')]].map(([val, label], k) => (
+                    <div key={k} style={{ padding: '12px 6px', textAlign: 'center', borderLeft: k ? '1px solid var(--line-2)' : 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 19 }} className="tnum">{val}</div>
+                      <div className="muted" style={{ fontSize: 11.5, fontWeight: 600 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="row" style={{ gap: 8, padding: 12 }}>
+                  <span className="row muted truncate" style={{ gap: 6, flex: 1, fontSize: 13 }}><Icon name="car" size={16} />{v ? `${v.name} · ${v.plate}` : T('no_vehicle')}</span>
+                  <Button size="sm" variant="ghost" icon="calendar" title={T('calendar')} onClick={() => { setCalFilterI(i.id); setCalView('week'); go('calendar'); }} />
+                  {i.phone && <LinkButton size="sm" href={telLink(i.phone)} icon="phone" title={T('call')} />}
+                  {i.phone && <LinkButton size="sm" variant="whatsapp" href={whatsappLink(i.phone)} icon="whatsapp" title="WhatsApp" />}
+                </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', textAlign: 'center' }}>
-                {[[myStu.length, T('students')], [todays.length, T('today')], [v ? v.plate : '—', T('vehicle')]].map((r, idx) => (
-                  <div key={idx} style={{ padding: '14px 8px', borderRight: idx < 2 ? '1px solid ' + C.line2 : 'none' }}>
-                    <div style={{ fontFamily: font.disp, fontSize: 18, fontWeight: 700, color: C.ink }}>{r[0]}</div>
-                    <div style={{ fontSize: 11, color: C.mut, fontWeight: 600, marginTop: 2 }}>{r[1]}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

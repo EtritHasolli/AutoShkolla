@@ -1,159 +1,145 @@
 import React from 'react';
 import { useApp } from '../AppContext.jsx';
-import { Icon, Pill, Avatar, EmptyRow, btnGhostStyle, euro, statusColor, statusBg, payColor, payBg } from '../components/ui.jsx';
-import { C, font } from '../data/seed.js';
-import { useIsMobile } from '../hooks/useMediaQuery.js';
-
-function Metric({ label, val, sub, icon, color, bg }) {
-  return (
-    <div style={{ flex: 1, minWidth: 180, background: C.surf, border: '1px solid ' + C.line, borderRadius: 15, padding: '17px 18px', boxShadow: '0 1px 2px rgba(40,40,90,.04), 0 8px 24px -18px rgba(40,40,90,.28)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: C.mut }}>{label}</div>
-        <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon} size={18} sw={2} />
-        </div>
-      </div>
-      <div style={{ fontFamily: font.disp, fontSize: 30, fontWeight: 700, color: C.ink, marginTop: 12, letterSpacing: '-.02em' }}>{val}</div>
-      <div style={{ fontSize: 12.5, color: C.soft, marginTop: 3 }}>{sub}</div>
-    </div>
-  );
-}
-
-function Card({ title, extra, children }) {
-  return (
-    <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 1px 2px rgba(40,40,90,.04), 0 8px 24px -18px rgba(40,40,90,.24)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid ' + C.line2 }}>
-        <div style={{ fontFamily: font.disp, fontWeight: 600, fontSize: 15.5, color: C.ink }}>{title}</div>
-        {extra}
-      </div>
-      <div style={{ padding: '8px 0' }}>{children}</div>
-    </div>
-  );
-}
+import { Card, Stat, Badge, Avatar, Button, LinkButton, Empty, Icon, ToneIcon, PageHeader, lessonTone } from '../components/ui.jsx';
+import { euro, hh, fmtLong, fmtDay, sameMonth, addDays, greetingKey, whatsappLink, daysUntil } from '../lib/format.js';
+import { vehicleAlerts, alertText } from '../lib/alerts.js';
+import { BRAND } from '../lib/brand.js';
 
 export default function Dashboard() {
-  const { lessons, data, todayIdx, T, go, openModal, openStudent, showToast, me } = useApp();
-  const isMobile = useIsMobile();
-  const todays = lessons.filter(l => l.day === todayIdx).sort((a, b) => a.hour - b.hour);
-  const doneToday = todays.filter(l => l.status === 'completed').length;
-  const overdueStudents = data.students.filter(s => s.payment !== 'paid');
-  const monthRevenue = data.payments.reduce((a, p) => a + p.amount, 0);
-  const outstanding = data.students.reduce((a, s) => a + s.due, 0);
-  const availV = data.vehicles.filter(v => v.status === 'available').length;
-  const upExams = data.exams.filter(e => e.status === 'scheduled');
+  const { lessons, data, today, T, lang, role, me, user, school, go, openModal, openStudent } = useApp();
+  const todays = lessons.filter(l => l.date === today && l.status !== 'cancelled').sort((a, b) => a.hour - b.hour);
+  const done = todays.filter(l => l.status === 'completed').length;
 
-  function link(label, onClick) {
-    return (
-      <button onClick={onClick} style={{ border: 'none', background: 'transparent', color: C.pri, fontSize: 12.5, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3, padding: 0 }}>
-        {label}<Icon name="chevR" size={14} sw={2.2} />
-      </button>
-    );
-  }
+  const monthRev = data.payments.filter(p => sameMonth(p.date, today)).reduce((a, p) => a + p.amount, 0);
+  const lastMonthRef = addDays(today.slice(0, 8) + '01', -1);
+  const lastRev = data.payments.filter(p => sameMonth(p.date, lastMonthRef)).reduce((a, p) => a + p.amount, 0);
+  const owing = data.students.filter(s => s.due > 0).sort((a, b) => b.due - a.due);
+  const outstanding = owing.reduce((a, s) => a + s.due, 0);
+  const active = data.students.filter(s => s.remaining > 0 || s.practical !== 'passed');
+  const ready = data.students.filter(s => s.readiness >= 70 && s.practical !== 'passed').length;
+  const alerts = vehicleAlerts(data.vehicles).slice(0, 5);
+  const upcoming = data.exams.filter(e => e.status === 'scheduled' && e.date >= today).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
+
+  const monthDone = {};
+  lessons.forEach(l => { if (l.status === 'completed' && sameMonth(l.date, today)) monthDone[l.instructorId] = (monthDone[l.instructorId] || 0) + 1; });
+  const topId = Object.entries(monthDone).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const top = data.instructors.find(i => i.id === topId);
+
+  const first = (me?.name || user?.name || '').split(' ')[0];
+  const sName = (id) => data.students.find(s => s.id === id)?.name || '—';
+  const link = (label, r) => <button className="btn btn-ghost btn-sm" onClick={() => go(r)}>{label}<Icon name="chevR" size={15} /></button>;
 
   return (
-    <div style={{ padding: isMobile ? '18px 16px 32px' : '24px 26px 40px', animation: 'df-fade .25s' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <div style={{ fontFamily: font.disp, fontSize: 24, fontWeight: 700, color: C.ink, letterSpacing: '-.02em' }}>{T('good_morning')}, {(me?.name || 'Astrit').split(' ')[0]}</div>
-          <div style={{ fontSize: 13.5, color: C.mut, marginTop: 3 }}>{todays.length} {T('sched_today')} · {doneToday} {T('completed').toLowerCase()}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 9 }}>
-          <button onClick={() => openModal({ type: 'student' })} style={btnGhostStyle()}>
-            <Icon name="plus" size={16} sw={2.2} />{T('add_student')}
-          </button>
-          <button onClick={() => openModal({ type: 'payment' })} style={btnGhostStyle()}>
-            <Icon name="euro" size={16} sw={2} />{T('record_payment')}
-          </button>
-        </div>
+    <div className="page">
+      <PageHeader
+        title={`${T(greetingKey())}${first ? ', ' + first : ''}`}
+        sub={fmtLong(today, lang) + ' · ' + T('today_summary', { n: todays.length, d: done })}
+        actions={<div className="hide-mobile row" style={{ gap: 8 }}>
+          <Button icon="students" onClick={() => openModal({ type: 'student' })}>{T('add_student')}</Button>
+          <Button icon="euro" onClick={() => openModal({ type: 'payment' })}>{T('record_payment')}</Button>
+        </div>}
+      />
+
+      <div className="grid-4" style={{ marginBottom: 16 }}>
+        <Stat label={T('kpi_lessons_today')} value={todays.length} sub={T('kpi_n_done', { n: done })} icon="calendar" tone="brand" />
+        <Stat label={T('kpi_revenue_month')} value={euro(monthRev)} sub={T('kpi_vs_last', { v: euro(lastRev) })} icon="euro" tone="green" />
+        <Stat label={T('kpi_outstanding')} value={euro(outstanding)} sub={T('kpi_n_students', { n: owing.length })} icon="alert" tone="red" />
+        <Stat label={T('kpi_active_students')} value={active.length} sub={T('kpi_ready', { n: ready })} icon="students" tone="violet" />
       </div>
 
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
-        <Metric label={T('today_lessons')} val={todays.length} sub={doneToday + ' ' + T('completed').toLowerCase()} icon="calendar" color={C.pri} bg={C.priBg} />
-        <Metric label={T('revenue_month')} val={euro(monthRevenue)} sub={T('this_week')} icon="euro" color={C.grn} bg={C.grnBg} />
-        <Metric label={T('active_instr')} val={data.instructors.length} sub={T('avail_vehicles') + ': ' + availV} icon="instructors" color={C.vio} bg={C.vioBg} />
-        <Metric label={T('overdue')} val={euro(outstanding)} sub={overdueStudents.length + ' ' + T('students').toLowerCase()} icon="alert" color={C.red} bg={C.redBg} />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.6fr 1fr', gap: 16, alignItems: 'start' }}>
-        <Card title={T('today_lessons')} extra={link(T('view_all'), () => go('calendar'))}>
-          {todays.length ? todays.map(l => {
-            const s = data.students.find(x => x.id === l.studentId);
-            const i = data.instructors.find(x => x.id === l.instructorId);
-            const v = data.vehicles.find(x => x.id === l.vehicleId);
-            return (
-              <button key={l.id} onClick={() => openStudent(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', width: '100%', border: 'none', background: 'transparent', textAlign: 'left', borderBottom: '1px solid ' + C.line2 }}>
-                <div style={{ fontFamily: font.mono, fontSize: 13.5, fontWeight: 600, color: C.ink2, width: 46 }}>{String(l.hour).padStart(2, '0')}:00</div>
-                <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 3, background: statusColor(l.status) }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: C.mut, marginTop: 1 }}>{i ? i.name : 'Unassigned'} · {v ? v.name : '—'}</div>
-                </div>
-                <Pill text={T(l.status)} color={statusColor(l.status)} bg={statusBg(l.status)} />
-              </button>
-            );
-          }) : <EmptyRow msg={T('no_lessons')} />}
-        </Card>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Card title={T('alerts')}>
-            {[
-              { ic: 'alert', col: C.amb, bg: C.ambBg, t: 'VW Golf 7 – insurance ends Jul 4', s: '5 days left' },
-              { ic: 'car2', col: C.red, bg: C.redBg, t: 'Toyota Yaris – in maintenance', s: 'service due' },
-              { ic: 'calendar', col: C.pri, bg: C.priBg, t: 'Škoda Fabia – registration Jul 9', s: '10 days left' },
-            ].map((a, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: a.bg, color: a.col, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon name={a.ic} size={17} sw={2} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{a.t}</div>
-                  <div style={{ fontSize: 11.5, color: C.mut }}>{a.s}</div>
-                </div>
-              </div>
-            ))}
-          </Card>
-
-          <Card title={T('upcoming_exams')} extra={link(T('view_all'), () => go('exams'))}>
-            {upExams.map(e => {
-              const s = data.students.find(x => x.id === e.studentId);
+      <div className="grid-main">
+        <div className="stack">
+          <Card flush title={T('todays_schedule')} sub={fmtDay(today, lang)} extra={link(T('calendar'), 'calendar')}>
+            {todays.length ? todays.map(l => {
+              const s = data.students.find(x => x.id === l.studentId);
+              const i = data.instructors.find(x => x.id === l.instructorId);
+              const v = data.vehicles.find(x => x.id === l.vehicleId);
               return (
-                <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: e.type === 'theory' ? C.vioBg : C.tealBg, color: e.type === 'theory' ? C.vio : C.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon name={e.type === 'theory' ? 'doc' : 'car2'} size={16} sw={2} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{s.name}</div>
-                    <div style={{ fontSize: 11.5, color: C.mut }}>{T(e.type)} · {new Date(e.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </Card>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 16 }}>
-        <Card title={T('overdue_students')} extra={link(T('view_all'), () => go('payments'))}>
-          <div style={{ padding: '0 8px' }}>
-            {overdueStudents.slice(0, 5).map(s => {
-              const i = data.instructors.find(x => x.id === s.instructorId);
-              return (
-                <button key={s.id} onClick={() => openStudent(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 12px', width: '100%', border: 'none', background: 'transparent', textAlign: 'left', borderBottom: '1px solid ' + C.line2, cursor: 'pointer' }}>
-                  <Avatar name={s.name} />
+                <button key={l.id} className="row-item" onClick={() => openModal({ type: 'lessonView', id: l.id })}>
+                  <div className="mono" style={{ width: 46, fontWeight: 600, fontSize: 13.5, color: 'var(--ink-2)' }}>{hh(l.hour)}</div>
+                  <div style={{ width: 4, alignSelf: 'stretch', borderRadius: 4, background: i?.color || 'var(--line)' }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: C.mut }}>{i ? i.name : 'Unassigned'} · {s.used}/{s.total} {T('lessons').toLowerCase()}</div>
+                    <div className="row-title">{s?.name || '—'}</div>
+                    <div className="row-sub">{(i?.name || T('unassigned')) + ' · ' + (v ? v.name : T('no_vehicle'))}</div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 600, color: C.red }}>{euro(s.due)}</div>
-                    <div style={{ fontSize: 11, color: C.mut }}>{T('remaining')}</div>
-                  </div>
-                  <Pill text={T(s.payment)} color={payColor(s.payment)} bg={payBg(s.payment)} />
+                  <Badge tone={lessonTone(l.status)} dot>{T(l.status)}</Badge>
                 </button>
               );
-            })}
-          </div>
-        </Card>
+            }) : (
+              <Empty icon="calendar" title={T('no_lessons_today')} text={T('no_lessons_today_text')}
+                action={<Button variant="primary" icon="plus" onClick={() => openModal({ type: 'lesson' })}>{T('schedule_lesson')}</Button>} />
+            )}
+          </Card>
+
+          <Card flush title={T('debts')} sub={owing.length ? euro(outstanding) : null} extra={link(T('payments'), 'payments')}>
+            {owing.length ? owing.slice(0, 6).map(s => (
+              <div key={s.id} className="row-item clickable" style={{ cursor: 'pointer' }} onClick={() => openStudent(s.id, 'payments')}>
+                <Avatar name={s.name} size={36} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="row-title">{s.name}</div>
+                  <div className="row-sub">{T('lessons_used', { u: s.used, t: s.total })}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="tnum" style={{ fontWeight: 700, color: 'var(--red)' }}>{euro(s.due)}</div>
+                  <div className="muted" style={{ fontSize: 12 }}>{T(s.payment)}</div>
+                </div>
+                {s.phone && (
+                  <LinkButton size="sm" variant="whatsapp" icon="whatsapp" href={whatsappLink(s.phone, T('reminder_payment_text', { name: s.name.split(' ')[0], amount: euro(s.due), school: school?.name || BRAND }))}
+                    onClick={e => e.stopPropagation()} title={T('send_reminder')} />
+                )}
+              </div>
+            )) : <Empty icon="checkCircle" title={T('no_debts')} />}
+          </Card>
+        </div>
+
+        <div className="stack">
+          <Card flush title={T('alerts')} extra={alerts.length ? <Badge tone="amber">{alerts.length}</Badge> : null}>
+            {alerts.length ? alerts.map(a => {
+              const tx = alertText(a, T);
+              return (
+                <button key={a.key} className="row-item" onClick={() => openModal({ type: 'vehicle', editId: a.vehicle.id })} disabled={role === 'receptionist'}>
+                  <ToneIcon name={a.kind === 'maint' || a.kind === 'service' ? 'wrench' : a.kind === 'ins' ? 'shield' : 'doc'} tone={a.tone} size={34} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="row-title">{tx.title}</div>
+                    <div className="row-sub" style={{ color: a.tone === 'red' ? 'var(--red)' : undefined }}>{tx.sub}</div>
+                  </div>
+                </button>
+              );
+            }) : <Empty icon="checkCircle" title={T('no_alerts')} />}
+          </Card>
+
+          <Card flush title={T('upcoming_exams')} extra={link(T('exams'), 'exams')}>
+            {upcoming.length ? upcoming.map(e => {
+              const d = daysUntil(e.date);
+              return (
+                <button key={e.id} className="row-item" onClick={() => openStudent(e.studentId)}>
+                  <ToneIcon name={e.type === 'theory' ? 'courses' : 'car'} tone={e.type === 'theory' ? 'violet' : 'teal'} size={34} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="row-title">{sName(e.studentId)}</div>
+                    <div className="row-sub">{T(e.type + '_exam')} · {fmtDay(e.date, lang)}</div>
+                  </div>
+                  <Badge tone={d <= 3 ? 'amber' : 'gray'}>{d === 0 ? T('today') : d === 1 ? T('tomorrow') : T('days_left', { n: d })}</Badge>
+                </button>
+              );
+            }) : <Empty icon="exams" title={T('no_upcoming_exams')} />}
+          </Card>
+
+          {role === 'owner' && top && (
+            <Card>
+              <div className="row" style={{ gap: 12 }}>
+                <Avatar name={top.name} color={top.color} size={44} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="muted" style={{ fontSize: 12.5, fontWeight: 600 }}>{T('top_instructor')}</div>
+                  <div className="truncate" style={{ fontWeight: 700, fontSize: 15.5 }}>{top.name}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 800, fontSize: 22 }} className="tnum">{monthDone[top.id]}</div>
+                  <div className="muted" style={{ fontSize: 12 }}>{T('lessons_completed')}</div>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

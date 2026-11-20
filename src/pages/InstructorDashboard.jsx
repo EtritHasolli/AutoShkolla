@@ -1,109 +1,117 @@
 import React from 'react';
 import { useApp } from '../AppContext.jsx';
-import { Icon, Pill, Avatar, EmptyRow, ProgressBar, statusColor, statusBg, payColor, payBg } from '../components/ui.jsx';
-import { C, font } from '../data/seed.js';
-import { useIsMobile } from '../hooks/useMediaQuery.js';
+import { Card, Stat, Badge, Avatar, Button, LinkButton, Empty, Icon, Progress, lessonTone } from '../components/ui.jsx';
+import { hh, fmtLong, fmtDay, addDays, greetingKey, telLink, whatsappLink } from '../lib/format.js';
+import { BRAND } from '../lib/brand.js';
 
-function Metric({ label, val, icon, color, bg }) {
-  return (
-    <div style={{ flex: 1, minWidth: 150, background: C.surf, border: '1px solid ' + C.line, borderRadius: 15, padding: '16px 18px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: C.mut }}>{label}</div>
-        <div style={{ width: 32, height: 32, borderRadius: 9, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={icon} size={17} sw={2} />
-        </div>
-      </div>
-      <div style={{ fontFamily: font.disp, fontSize: 28, fontWeight: 700, color: C.ink, marginTop: 10 }}>{val}</div>
-    </div>
-  );
+export function NotLinked() {
+  const { T } = useApp();
+  return <div className="page"><Card><Empty icon="user" title={T('not_linked')} /></Card></div>;
 }
 
-function NextLessonHero({ lesson }) {
-  const { data, openModal, showToast, T, days } = useApp();
+function NextLessonCard({ lesson }) {
+  const { data, T, lang, today, school, openModal, setLessonStatus } = useApp();
   const s = data.students.find(x => x.id === lesson.studentId);
   const v = data.vehicles.find(x => x.id === lesson.vehicleId);
-  const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][lesson.day];
+  const nowH = new Date().getHours();
+  const started = lesson.date < today || (lesson.date === today && lesson.hour <= nowH);
+  const when = lesson.date === today ? T('today').toLowerCase() : T('tomorrow').toLowerCase();
   return (
-    <div style={{ background: '#0f9d6b', borderRadius: 18, padding: '22px 24px', color: '#fff', boxShadow: '0 18px 40px -18px rgba(15,157,107,.6)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#cfe0fb', letterSpacing: '.05em', textTransform: 'uppercase' }}>{T('nextL')}</span>
-        <span style={{ background: 'rgba(255,255,255,.18)', padding: '5px 12px', borderRadius: 8, fontSize: 13, fontWeight: 700, fontFamily: font.mono }}>{dayName} · {String(lesson.hour).padStart(2, '0')}:00</span>
+    <div style={{ borderRadius: 20, padding: 20, color: '#fff', background: 'linear-gradient(150deg, #2f63f5 0%, #1c47c7 100%)', boxShadow: '0 20px 40px -22px rgba(36,86,230,.8)', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', right: -60, top: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,.35), transparent 70%)' }} />
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', opacity: .8 }}>{T('next_lesson')}</span>
+        <span className="mono" style={{ background: 'rgba(255,255,255,.18)', padding: '4px 10px', borderRadius: 8, fontWeight: 700 }}>{fmtDay(lesson.date, lang)} · {hh(lesson.hour)}</span>
       </div>
-      <div style={{ fontFamily: font.disp, fontSize: 26, fontWeight: 700, letterSpacing: '-.02em' }}>{s.name}</div>
-      <div style={{ display: 'flex', gap: 18, marginTop: 10, fontSize: 13.5, color: '#dbe6fb', flexWrap: 'wrap' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="car2" size={16} sw={1.9} />{v ? v.name + ' · ' + v.plate : 'No vehicle'}</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="pin" size={15} sw={1.9} />{lesson.pickup}</span>
+      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.03em', marginTop: 12 }}>{s?.name}</div>
+      <div className="row" style={{ gap: 16, marginTop: 8, opacity: .9, fontSize: 13.5, flexWrap: 'wrap' }}>
+        <span className="row" style={{ gap: 6 }}><Icon name="car" size={16} />{v ? `${v.name} · ${v.plate}` : T('no_vehicle')}</span>
+        {lesson.pickup && <span className="row" style={{ gap: 6 }}><Icon name="pin" size={16} />{lesson.pickup}</span>}
       </div>
-      <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-        <button onClick={() => showToast(T('call') + ' ' + s.phone)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: 'rgba(255,255,255,.16)', color: '#fff', border: 'none', padding: '11px', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-          <Icon name="phone" size={17} sw={2} />{T('call')}
-        </button>
-        <button onClick={() => openModal({ type: 'lessonView', id: lesson.id })} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: '#fff', color: C.pri, border: 'none', padding: '11px', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-          <Icon name="pin" size={17} sw={2} /> Details
-        </button>
+      <div className="row" style={{ gap: 8, marginTop: 18 }}>
+        {s?.phone && <LinkButton href={telLink(s.phone)} icon="phone" className="btn-white" size="lg" title={T('call')} />}
+        {s?.phone && <LinkButton href={whatsappLink(s.phone, T('reminder_lesson_text', { name: s.name.split(' ')[0], when, time: hh(lesson.hour), pickup: lesson.pickup || '—', school: school?.name || BRAND }))} icon="whatsapp" className="btn-white" size="lg" title="WhatsApp" />}
+        {started
+          ? <Button variant="accent" size="lg" icon="check" style={{ flex: 1 }} onClick={() => setLessonStatus(lesson.id, 'completed')}>{T('mark_completed')}</Button>
+          : <Button className="btn-white" size="lg" icon="info" style={{ flex: 1 }} onClick={() => openModal({ type: 'lessonView', id: lesson.id })}>{T('details')}</Button>}
       </div>
     </div>
   );
 }
 
 export default function InstructorDashboard() {
-  const { me, data, lessons, todayIdx, openModal, openStudent, T } = useApp();
-  const isMobile = useIsMobile();
-
-  const myLessons = lessons.filter(l => l.instructorId === me.id);
-  const todays = myLessons.filter(l => l.day === todayIdx).sort((a, b) => a.hour - b.hour);
+  const { me, data, lessons, today, T, lang, openModal, openStudent, setLessonStatus, go } = useApp();
+  if (me.missing) return <NotLinked />;
+  const mine = lessons.filter(l => l.instructorId === me.id && l.status !== 'cancelled');
+  const todays = mine.filter(l => l.date === today).sort((a, b) => a.hour - b.hour);
+  const tomorrow = mine.filter(l => l.date === addDays(today, 1)).sort((a, b) => a.hour - b.hour);
   const done = todays.filter(l => l.status === 'completed').length;
-  const next = todays.find(l => l.status === 'scheduled') || todays.find(l => l.status !== 'completed');
-  const myStudents = data.students.filter(s => s.instructorId === me.id);
+  const next = todays.find(l => l.status === 'scheduled') || tomorrow.find(l => l.status === 'scheduled');
+  const myStudents = data.students.filter(s => s.instructorId === me.id).sort((a, b) => b.readiness - a.readiness);
+  const nowH = new Date().getHours();
+
+  const LessonRow = ({ l, compact }) => {
+    const s = data.students.find(x => x.id === l.studentId);
+    const due = l.status === 'scheduled' && (l.date < today || (l.date === today && l.hour <= nowH));
+    return (
+      <div className="row-item" style={{ cursor: 'pointer' }} onClick={() => openModal({ type: 'lessonView', id: l.id })}>
+        <div className="mono" style={{ width: 46, fontWeight: 700 }}>{hh(l.hour)}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="row-title">{s?.name}</div>
+          <div className="row-sub">{l.pickup || T(l.type === 'highway' ? 'highway' : 'city_drive')}</div>
+        </div>
+        {!compact && l.status === 'scheduled' ? (
+          <div className="row" style={{ gap: 6 }} onClick={e => e.stopPropagation()}>
+            <Button size="sm" variant="secondary" icon="x" title={T('mark_no_show')} onClick={() => setLessonStatus(l.id, 'no_show')} />
+            <Button size="sm" variant={due ? 'success' : 'soft'} icon="check" onClick={() => setLessonStatus(l.id, 'completed')}>{T('mark_completed')}</Button>
+          </div>
+        ) : <Badge tone={lessonTone(l.status)} dot>{T(l.status)}</Badge>}
+      </div>
+    );
+  };
 
   return (
-    <div style={{ padding: isMobile ? '18px 16px 90px' : '24px 26px 40px', animation: 'df-fade .25s' }}>
+    <div className="page">
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 13.5, color: C.mut, fontWeight: 600 }}>{T('good_morning')}</div>
-        <div style={{ fontFamily: font.disp, fontSize: 25, fontWeight: 700, color: C.ink, letterSpacing: '-.02em' }}>{me.name.split(' ')[0]}</div>
+        <div className="muted" style={{ fontWeight: 600 }}>{T(greetingKey())},</div>
+        <h1 className="page-title">{me.name.split(' ')[0]}</h1>
+        <div className="muted" style={{ fontSize: 13.5, marginTop: 2 }}>{fmtLong(today, lang)}</div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
-        <Metric label={T('today_lessons')} val={todays.length} icon="calendar" color={C.pri} bg={C.priBg} />
-        <Metric label={T('completed')} val={done} icon="check" color={C.grn} bg={C.grnBg} />
-        <Metric label={T('my_students')} val={myStudents.length} icon="students" color={C.vio} bg={C.vioBg} />
+      {next && <div style={{ marginBottom: 16 }}><NextLessonCard lesson={next} /></div>}
+
+      <div className="grid-3" style={{ gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 10, marginBottom: 16 }}>
+        <Stat label={T('today')} value={todays.length} />
+        <Stat label={T('completed')} value={done} valueColor="var(--green)" />
+        <Stat label={T('students')} value={myStudents.length} />
       </div>
 
-      {next && <div style={{ marginBottom: 16 }}><NextLessonHero lesson={next} /></div>}
-
-      <div className="df-grid-main">
-        <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 16, overflow: 'hidden' }}>
-          <div style={{ padding: '15px 20px', borderBottom: '1px solid ' + C.line2, fontFamily: font.disp, fontWeight: 600, fontSize: 15, color: C.ink }}>{T('today_lessons')}</div>
-          {todays.length ? todays.map(l => {
-            const s = data.students.find(x => x.id === l.studentId);
-            const v = data.vehicles.find(x => x.id === l.vehicleId);
-            return (
-              <button key={l.id} onClick={() => openModal({ type: 'lessonView', id: l.id })} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 20px', width: '100%', border: 'none', background: 'transparent', textAlign: 'left', borderBottom: '1px solid ' + C.line2, cursor: 'pointer' }}>
-                <div style={{ fontFamily: font.mono, fontSize: 13.5, fontWeight: 600, color: C.ink2, width: 46 }}>{String(l.hour).padStart(2, '0')}:00</div>
-                <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 3, background: statusColor(l.status) }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: C.mut, marginTop: 1 }}>{v ? v.name : '—'} · {T(l.type)}</div>
-                </div>
-                <Pill text={T(l.status)} color={statusColor(l.status)} bg={statusBg(l.status)} />
-              </button>
-            );
-          }) : <EmptyRow msg={T('no_lessons')} />}
+      <div className="grid-main">
+        <div className="stack">
+          <Card flush title={T('todays_schedule')} sub={fmtDay(today, lang)}>
+            {todays.length ? todays.map(l => <LessonRow key={l.id} l={l} />) : <Empty icon="calendar" title={T('no_lessons_today')} />}
+          </Card>
+          {tomorrow.length > 0 && (
+            <Card flush title={T('tomorrow')} sub={fmtDay(addDays(today, 1), lang)} extra={<button className="btn btn-ghost btn-sm" onClick={() => go('calendar')}>{T('schedule')}<Icon name="chevR" size={15} /></button>}>
+              {tomorrow.map(l => <LessonRow key={l.id} l={l} compact />)}
+            </Card>
+          )}
         </div>
-
-        <div style={{ background: C.surf, border: '1px solid ' + C.line, borderRadius: 16, overflow: 'hidden' }}>
-          <div style={{ padding: '15px 20px', borderBottom: '1px solid ' + C.line2, fontFamily: font.disp, fontWeight: 600, fontSize: 15, color: C.ink }}>{T('my_students')}</div>
-          {myStudents.map(s => (
-            <button key={s.id} onClick={() => openStudent(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 20px', width: '100%', border: 'none', background: 'transparent', textAlign: 'left', borderBottom: '1px solid ' + C.line2, cursor: 'pointer' }}>
+        <Card flush title={T('my_students')} extra={<button className="btn btn-ghost btn-sm" onClick={() => go('students')}>{T('view_all')}<Icon name="chevR" size={15} /></button>}>
+          {myStudents.length ? myStudents.slice(0, 8).map(s => (
+            <button key={s.id} className="row-item" onClick={() => openStudent(s.id)}>
               <Avatar name={s.name} size={36} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: C.ink }}>{s.name}</div>
-                <div style={{ marginTop: 4 }}><ProgressBar val={s.readiness} max={100} color={s.readiness >= 70 ? C.grn : C.amb} h={5} /></div>
+                <div className="row-title">{s.name}</div>
+                <div className="row" style={{ gap: 8, marginTop: 5 }}>
+                  <Progress value={s.readiness} color={s.readiness >= 70 ? 'var(--green)' : 'var(--amber)'} h={5} />
+                  <span className="mono muted" style={{ fontSize: 12 }}>{s.readiness}%</span>
+                </div>
               </div>
-              <Pill text={T(s.payment)} color={payColor(s.payment)} bg={payBg(s.payment)} />
+              <Icon name="chevR" size={16} style={{ color: 'var(--soft)' }} />
             </button>
-          ))}
-        </div>
+          )) : <Empty icon="students" title={T('no_students')} />}
+        </Card>
       </div>
     </div>
   );

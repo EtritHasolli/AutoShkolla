@@ -1,126 +1,194 @@
-export const C = {
-  // Text
-  ink: '#0f1a17', ink2: '#39473f', mut: '#6d7a72', soft: '#95a19a',
-  // Surfaces & lines
-  line: '#e5eae7', line2: '#eef2f0', bg: '#f3f6f4', surf: '#ffffff',
-  // Sidebar — deep neutral green-slate (single hue, no gradient)
-  side: '#0e1a15', sidePanel: '#14231c', sideMut: '#899a91', sideLine: '#213028', sideActive: '#17281f',
-  // Primary — solid emerald (brand identity)
-  pri: '#0f9d6b', priD: '#0b7f56', priBg: '#e2f4ec', priSoft: '#f2faf6',
-  // Accents
-  grn: '#1a8f5f', grnBg: '#e3f3ea',
-  amb: '#c07d12', ambBg: '#f8eed7',
-  red: '#e0463f', redBg: '#fce8e6',
-  vio: '#6d5cd6', vioBg: '#ebe8fa',
-  teal: '#0b8ea6', tealBg: '#def0f3',
-  // Brand — single solid emerald (no gradient blend)
-  grad: '#0f9d6b',
-  gradSoft: '#12b47b',
-};
+// Demo data (used when no Supabase project is configured, or in "Try the demo").
+// Everything is generated relative to today so the demo always looks current.
+import { todayISO, addDays, weekStart } from '../lib/format.js';
+import { DEFAULT_PACKAGES } from '../lib/brand.js';
 
-export const font = {
-  disp: "'Space Grotesk', sans-serif",
-  body: "'Manrope', sans-serif",
-  mono: "'JetBrains Mono', monospace",
-};
+export const SKILLS = ['parking', 'reverse', 'highway', 'clutch', 'roundabout', 'lane'];
 
-export const instructors = [
-  { id: 'i1', name: 'Arben Krasniqi', cat: 'B', phone: '+383 44 211 980', color: C.pri, rating: 4.8, students: 9, vehicle: 'v1' },
-  { id: 'i2', name: 'Vlora Berisha', cat: 'B', phone: '+383 45 330 114', color: C.vio, rating: 4.9, students: 11, vehicle: 'v2' },
-  { id: 'i3', name: 'Driton Gashi', cat: 'B,C', phone: '+383 49 870 552', color: C.teal, rating: 4.6, students: 7, vehicle: 'v3' },
-  { id: 'i4', name: 'Fatlume Hoxha', cat: 'B', phone: '+383 44 615 203', color: C.amb, rating: 4.7, students: 8, vehicle: 'v4' },
-];
+export function buildDemo() {
+  const today = todayISO();
+  const mon = weekStart(today);
+  const d = (n) => addDays(today, n);
 
-export const vehicles = [
-  { id: 'v1', name: 'VW Golf 7', plate: '01-123-AB', cat: 'B', year: 2019, reg: '2026-09-12', ins: '2026-07-04', km: 142300, status: 'available', service: '2026-08-01' },
-  { id: 'v2', name: 'Opel Astra', plate: '02-456-CD', cat: 'B', year: 2020, reg: '2026-11-20', ins: '2027-02-18', km: 98750, status: 'in_use', service: '2026-09-15' },
-  { id: 'v3', name: 'Škoda Fabia', plate: '03-789-EF', cat: 'B', year: 2018, reg: '2026-07-09', ins: '2026-12-01', km: 176400, status: 'available', service: '2026-07-10' },
-  { id: 'v4', name: 'Toyota Yaris', plate: '04-012-GH', cat: 'B', year: 2021, reg: '2027-04-30', ins: '2026-07-22', km: 61200, status: 'maintenance', service: '2026-06-30' },
-];
-
-const fn = ['Endrit', 'Rina', 'Blerim', 'Adelina', 'Festim', 'Donika', 'Granit', 'Leotrim', 'Albina', 'Yll', 'Erblin', 'Kaltrina'];
-const ln = ['Morina', 'Shala', 'Rexhepi', 'Kelmendi', 'Bytyqi', 'Zeqiri', 'Haliti', 'Ademi', 'Murati', 'Dauti', 'Bardhi', 'Veliu'];
-export const skills = ['parking', 'reverse', 'highway', 'clutch', 'roundabout', 'lane'];
-
-export const students = [];
-for (let i = 0; i < 12; i++) {
-  const total = [20, 30, 40][i % 3];
-  const used = Math.min(total, 4 + ((i * 7) % total));
-  const pay = ['paid', 'partial', 'unpaid', 'paid', 'partial', 'paid', 'unpaid', 'partial', 'paid', 'paid', 'partial', 'unpaid'][i];
-  const ins = instructors[i % 4];
-  const prog = {};
-  skills.forEach((s, si) => { prog[s] = Math.max(1, Math.min(5, 2 + ((i + si) % 4))); });
-  const price = total === 20 ? 260 : total === 30 ? 360 : 460;
-  const paidAmt = pay === 'paid' ? price : pay === 'partial' ? Math.round(price * 0.5) : (pay === 'unpaid' && i % 3 === 0 ? 0 : 80);
-  students.push({
-    id: 's' + (i + 1), name: fn[i] + ' ' + ln[i], phone: '+383 4' + (3 + i % 6) + ' ' + (100 + i * 7) + ' ' + (200 + i * 3),
-    cat: 'B', instructorId: ins.id, total, used, remaining: total - used, payment: pay,
-    price, paid: paidAmt, due: price - paidAmt, progress: prog,
-    joined: ['2026-03-12', '2026-04-02', '2026-02-20', '2026-05-09', '2026-01-30', '2026-04-22', '2026-03-01', '2026-05-18', '2026-02-11', '2026-04-15', '2026-03-27', '2026-05-30'][i],
-    theory: i % 3 === 0 ? 'passed' : i % 3 === 1 ? 'scheduled' : 'not_taken',
-    practical: i % 4 === 0 ? 'passed' : 'not_taken',
-    readiness: Math.min(100, 38 + used * 2 + (i % 3) * 6),
-  });
-}
-
-export const payments = [
-  { id: 'p1', studentId: 's1', date: '2026-06-26', amount: 260, method: 'cash', note: 'Full package 20' },
-  { id: 'p2', studentId: 's2', date: '2026-06-25', amount: 180, method: 'bank', note: 'Partial' },
-  { id: 'p3', studentId: 's6', date: '2026-06-24', amount: 460, method: 'cash', note: 'Full package 40' },
-  { id: 'p4', studentId: 's5', date: '2026-06-22', amount: 180, method: 'cash', note: 'Partial' },
-  { id: 'p5', studentId: 's9', date: '2026-06-20', amount: 360, method: 'bank', note: 'Full package 30' },
-  { id: 'p6', studentId: 's4', date: '2026-06-18', amount: 80, method: 'other', note: 'Deposit' },
-  { id: 'p7', studentId: 's10', date: '2026-06-15', amount: 260, method: 'cash', note: 'Full package 20' },
-];
-
-export const exams = [
-  { id: 'e1', studentId: 's1', type: 'practical', date: '2026-07-02', status: 'scheduled' },
-  { id: 'e2', studentId: 's4', type: 'theory', date: '2026-07-01', status: 'scheduled' },
-  { id: 'e3', studentId: 's7', type: 'theory', date: '2026-07-03', status: 'scheduled' },
-  { id: 'e4', studentId: 's10', type: 'practical', date: '2026-06-28', status: 'passed' },
-  { id: 'e5', studentId: 's2', type: 'theory', date: '2026-06-20', status: 'failed' },
-];
-
-export const notifications = [
-  { id: 'n1', type: 'reminder', title: 'Lesson reminder', body: 'Endrit Morina — tomorrow 09:00', time: '2h ago', status: 'sent', read: false },
-  { id: 'n2', type: 'payment', title: 'Payment reminder', body: 'Blerim Rexhepi — 180€ remaining', time: '5h ago', status: 'pending', read: false },
-  { id: 'n3', type: 'cancel', title: 'Lesson cancelled', body: 'Festim Bytyqi cancelled Wed 16:00', time: '1d ago', status: 'sent', read: true },
-  { id: 'n4', type: 'alert', title: 'Insurance expiring', body: 'VW Golf 7 — insurance ends Jul 4', time: '1d ago', status: 'sent', read: true },
-  { id: 'n5', type: 'reminder', title: 'Exam reminder', body: 'Adelina Kelmendi — theory exam Jul 1', time: '2d ago', status: 'sent', read: true },
-];
-
-function seedLessons() {
-  const L = []; let lid = 1;
-  const place = (day, hour, si, ii, vi, status) => {
-    L.push({ id: 'L' + (lid++), day, hour, studentId: students[si].id, instructorId: instructors[ii].id, vehicleId: vehicles[vi].id, status, type: hour % 3 === 0 ? 'city' : 'highway', pickup: ['Qendra', 'Dardania', 'Kalabria', 'Ulpiana'][si % 4] });
+  const school = {
+    id: 'demo-school', name: 'Autoshkolla Dardania', bizNumber: '811234567',
+    address: 'Rr. Nëna Terezë 24', city: 'Prishtinë', phone: '+383 44 123 456',
+    logo: null, cats: ['B', 'C'], plan: 'Standard', status: 'active',
+    mapsUrl: 'https://maps.google.com/?q=Prishtina', hoursStart: '08:00', hoursEnd: '18:00',
+    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    listed: true, acceptEnrollments: true, packages: DEFAULT_PACKAGES,
   };
-  const seed = [
-    [0,8,0,0,0,'completed'],[0,9,1,0,0,'completed'],[0,11,2,1,1,'completed'],[0,14,3,1,1,'scheduled'],[0,16,4,2,2,'scheduled'],
-    [1,8,5,0,0,'completed'],[1,10,6,1,1,'no_show'],[1,12,7,2,2,'scheduled'],[1,15,8,3,3,'scheduled'],[1,17,9,0,0,'scheduled'],
-    [2,9,10,1,1,'scheduled'],[2,11,11,2,2,'scheduled'],[2,13,0,3,3,'scheduled'],[2,15,1,0,0,'scheduled'],[2,16,2,1,1,'cancelled'],
-    [3,8,3,2,2,'scheduled'],[3,10,4,0,0,'scheduled'],[3,12,5,1,1,'scheduled'],[3,14,6,3,3,'scheduled'],[3,17,7,2,2,'scheduled'],
-    [4,9,8,0,0,'scheduled'],[4,11,9,1,1,'scheduled'],[4,13,10,2,2,'scheduled'],[4,15,11,3,3,'scheduled'],
-    [5,9,0,1,1,'scheduled'],[5,10,1,2,2,'scheduled'],[5,11,2,0,0,'scheduled'],
+
+  const instructors = [
+    { id: 'i1', name: 'Arben Krasniqi', cat: 'B', phone: '+383 44 211 980', color: '#2456e6', rating: 4.8, vehicle: 'v1', email: '' },
+    { id: 'i2', name: 'Vlora Berisha', cat: 'B', phone: '+383 45 330 114', color: '#7048e8', rating: 4.9, vehicle: 'v2', email: '' },
+    { id: 'i3', name: 'Driton Gashi', cat: 'B, C', phone: '+383 49 870 552', color: '#0e8aa6', rating: 4.6, vehicle: 'v3', email: '' },
+    { id: 'i4', name: 'Fatlume Hoxha', cat: 'B', phone: '+383 44 615 203', color: '#c27408', rating: 4.7, vehicle: 'v4', email: '' },
   ];
-  seed.forEach(s => place(...s));
-  return L;
-}
 
-export const initialLessons = seedLessons();
+  const vehicles = [
+    { id: 'v1', name: 'VW Golf 7', plate: '01-123-AB', cat: 'B', year: 2019, reg: d(210), ins: d(12), km: 142300, status: 'available', service: d(45) },
+    { id: 'v2', name: 'Opel Astra', plate: '01-456-CD', cat: 'B', year: 2020, reg: d(26), ins: d(290), km: 98750, status: 'in_use', service: d(80) },
+    { id: 'v3', name: 'Škoda Fabia', plate: '01-789-EF', cat: 'B', year: 2018, reg: d(150), ins: d(64), km: 176400, status: 'available', service: d(-3) },
+    { id: 'v4', name: 'Toyota Yaris', plate: '01-012-GH', cat: 'B', year: 2021, reg: d(330), ins: d(190), km: 61200, status: 'maintenance', service: d(2) },
+  ];
 
-export function getWeekDays() {
-  const today = new Date();
-  const dow = (today.getDay() + 6) % 7;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - dow);
-  monday.setHours(0, 0, 0, 0);
-  const days = [];
-  for (let d = 0; d < 6; d++) {
-    const dt = new Date(monday);
-    dt.setDate(monday.getDate() + d);
-    days.push(dt);
+  const first = ['Endrit', 'Rina', 'Blerim', 'Adelina', 'Festim', 'Donika', 'Granit', 'Leotrim', 'Albina', 'Yll', 'Erblin', 'Kaltrina'];
+  const last = ['Morina', 'Shala', 'Rexhepi', 'Kelmendi', 'Bytyqi', 'Zeqiri', 'Haliti', 'Ademi', 'Murati', 'Dauti', 'Bardhi', 'Veliu'];
+  const notes = [
+    'Ecën mirë në qytet. Duhet më shumë praktikë te parkimi mbrapsht para provimit.',
+    'Preferon mësimet në mëngjes.',
+    '', 'Pak nervoz në rrethrrotullime — ka përmirësim.', '', 'Gati për provimin praktik.', '', '', 'Vjen nga Fushë Kosova — merret te stacioni.', '', '', '',
+  ];
+  const students = first.map((fn, i) => {
+    const pk = DEFAULT_PACKAGES[i % 3];
+    const progress = {};
+    SKILLS.forEach((s, si) => { progress[s] = Math.max(1, Math.min(5, 2 + ((i + si) % 4))); });
+    return {
+      id: 's' + (i + 1), name: fn + ' ' + last[i],
+      phone: '+383 4' + (4 + (i % 5)) + ' ' + (210 + i * 17) + ' ' + (300 + i * 23),
+      email: '', cat: 'B', instructorId: instructors[i % 4].id,
+      total: pk.lessons, price: pk.price, packageName: pk.name,
+      progress, joined: d(-20 - i * 9),
+      theory: 'not_taken', practical: 'not_taken',
+      notes: notes[i], usedBase: [6, 14, 3, 18, 9, 22, 2, 11, 16, 7, 12, 1][i],
+    };
+  });
+
+  // Lessons over last week, this week and next week.
+  const lessons = [];
+  let lid = 1;
+  const pickups = ['Qendra', 'Dardania', 'Kalabria', 'Ulpiana', 'Sunny Hill'];
+  const pattern = [
+    [0, 8, 0, 0], [0, 9, 1, 0], [0, 11, 2, 1], [0, 14, 3, 1], [0, 16, 4, 2],
+    [1, 8, 5, 0], [1, 10, 6, 1], [1, 12, 7, 2], [1, 15, 8, 3], [1, 17, 9, 0],
+    [2, 9, 10, 1], [2, 11, 11, 2], [2, 13, 0, 3], [2, 15, 1, 0], [2, 16, 2, 1],
+    [3, 8, 3, 2], [3, 10, 4, 0], [3, 12, 5, 1], [3, 14, 6, 3], [3, 17, 7, 2],
+    [4, 9, 8, 0], [4, 10, 1, 2], [4, 11, 9, 1], [4, 13, 10, 2], [4, 15, 11, 3], [4, 16, 5, 0],
+    [5, 9, 0, 1], [5, 10, 1, 2], [5, 11, 2, 0],
+  ];
+  const nowHour = new Date().getHours();
+  for (const wk of [-7, 0, 7]) {
+    pattern.forEach(([day, hour, si, ii], k) => {
+      if (wk !== 0 && k % 3 === 2) return; // lighter weeks around the current one
+      const date = addDays(mon, wk + day);
+      const past = date < today || (date === today && hour < nowHour);
+      let status = 'scheduled';
+      if (past) status = k % 11 === 6 ? 'no_show' : k % 13 === 9 ? 'cancelled' : 'completed';
+      else if (k === 14) status = 'cancelled';
+      const ins = instructors[ii];
+      lessons.push({
+        id: 'L' + (lid++), date, hour, studentId: students[si].id, instructorId: ins.id,
+        vehicleId: ins.vehicle, status, type: hour % 3 === 0 ? 'highway' : 'city',
+        pickup: pickups[si % pickups.length],
+      });
+    });
   }
-  return { days, todayIdx: dow < 6 ? dow : 5 };
+
+  const payments = [
+    { id: 'p1', studentId: 's1', date: d(-2), amount: 130, method: 'cash', note: 'Kësti i dytë' },
+    { id: 'p2', studentId: 's2', date: d(-4), amount: 180, method: 'bank', note: 'Gjysma e paketës' },
+    { id: 'p3', studentId: 's6', date: d(-6), amount: 460, method: 'cash', note: 'Paketa e plotë' },
+    { id: 'p4', studentId: 's5', date: d(-9), amount: 120, method: 'cash', note: '' },
+    { id: 'p5', studentId: 's9', date: d(-12), amount: 360, method: 'bank', note: 'Paketa e plotë' },
+    { id: 'p6', studentId: 's4', date: d(-15), amount: 80, method: 'other', note: 'Paradhënie' },
+    { id: 'p7', studentId: 's10', date: d(-24), amount: 260, method: 'cash', note: 'Paketa e plotë' },
+    { id: 'p8', studentId: 's1', date: d(-38), amount: 130, method: 'cash', note: 'Kësti i parë' },
+    { id: 'p9', studentId: 's8', date: d(-44), amount: 200, method: 'cash', note: '' },
+    { id: 'p10', studentId: 's11', date: d(-52), amount: 150, method: 'bank', note: '' },
+    { id: 'p11', studentId: 's3', date: d(-70), amount: 100, method: 'cash', note: 'Paradhënie' },
+    { id: 'p12', studentId: 's7', date: d(-85), amount: 260, method: 'cash', note: '' },
+    { id: 'p13', studentId: 's12', date: d(-105), amount: 180, method: 'bank', note: '' },
+  ];
+
+  const exams = [
+    { id: 'e1', studentId: 's6', type: 'practical', date: d(3), status: 'scheduled' },
+    { id: 'e2', studentId: 's4', type: 'theory', date: d(5), status: 'scheduled' },
+    { id: 'e3', studentId: 's9', type: 'practical', date: d(9), status: 'scheduled' },
+    { id: 'e4', studentId: 's6', type: 'theory', date: d(-21), status: 'passed' },
+    { id: 'e5', studentId: 's10', type: 'theory', date: d(-14), status: 'passed' },
+    { id: 'e6', studentId: 's2', type: 'theory', date: d(-10), status: 'failed' },
+    { id: 'e7', studentId: 's9', type: 'theory', date: d(-30), status: 'passed' },
+  ];
+
+  const now = Date.now();
+  const ago = (mins) => new Date(now - mins * 60000).toISOString();
+  const notifs = [
+    { id: 'n1', type: 'reminder', title: 'Regjistrim i ri', body: 'Kaltrina Veliu u regjistrua online', createdAt: ago(95), status: 'sent', read: false },
+    { id: 'n2', type: 'payment', title: 'Pagesë e regjistruar', body: 'Endrit Morina — 130 €', createdAt: ago(60 * 26), status: 'sent', read: false },
+    { id: 'n3', type: 'cancel', title: 'Mësim i anuluar', body: 'Festim Bytyqi anuloi mësimin e së mërkurës 16:00', createdAt: ago(60 * 30), status: 'sent', read: true },
+    { id: 'n4', type: 'alert', title: 'Sigurimi skadon së shpejti', body: 'VW Golf 7 — sigurimi skadon për 12 ditë', createdAt: ago(60 * 50), status: 'sent', read: true },
+  ];
+
+  return { school, instructors, vehicles, students, lessons, payments, exams, notifs, courses: DEMO_COURSES };
 }
 
-export const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+export const DEMO_COURSES = [
+  {
+    id: 'c1', title: 'Shenjat e komunikacionit', desc: 'Njihni shenjat më të zakonshme të rrugës në Kosovë.',
+    questions: [
+      { id: 'q1', text: 'Cilat nga këto janë shenja urdhëruese (blu, të rrumbullakëta)?', image: null, explanation: 'Shenjat urdhëruese janë blu dhe të rrumbullakëta — tregojnë çka duhet të bëni.', options: [
+        { id: 'o1', text: 'Kthehu djathtas', correct: true }, { id: 'o2', text: 'Ndalohet hyrja', correct: false },
+        { id: 'o3', text: 'Shpejtësia minimale', correct: true }, { id: 'o4', text: 'Jep përparësi', correct: false }] },
+      { id: 'q2', text: 'Shenja trekëndore me buzë të kuqe do të thotë…', image: null, explanation: 'Shenjat trekëndore me buzë të kuqe janë shenja paralajmëruese.', options: [
+        { id: 'o1', text: 'Rrezik përpara', correct: true }, { id: 'o2', text: 'Ndalim', correct: false }, { id: 'o3', text: 'Informacion', correct: false }] },
+      { id: 'q3', text: 'Kur semafori ndez dritën e verdhë, duhet të…', image: null, explanation: 'E verdha do të thotë ndalo, përveç nëse jeni aq afër sa nuk mund të ndaloni në mënyrë të sigurt.', options: [
+        { id: 'o1', text: 'Ndalosh nëse është e sigurt', correct: true }, { id: 'o2', text: 'Përshpejtosh për të kaluar', correct: false },
+        { id: 'o3', text: 'Vazhdosh vetëm nëse je duke kaluar tashmë', correct: true }] },
+      { id: 'q4', text: 'Shenja tetëkëndore e kuqe “STOP” kërkon…', image: null, explanation: 'Te shenja STOP duhet të ndaloni plotësisht, edhe nëse rruga duket e lirë.', options: [
+        { id: 'o1', text: 'Ndalim të plotë', correct: true }, { id: 'o2', text: 'Ngadalësim', correct: false }, { id: 'o3', text: 'Ndalim vetëm natën', correct: false }] },
+    ],
+  },
+  {
+    id: 'c2', title: 'Përparësia në kryqëzim', desc: 'Kush kalon i pari në kryqëzime, rrethrrotullime dhe vendkalime.',
+    questions: [
+      { id: 'q1', text: 'Në një kryqëzim pa shenja, kush ka përparësi?', image: null, explanation: 'Në kryqëzim të barabartë përparësi ka automjeti që vjen nga e djathta.', options: [
+        { id: 'o1', text: 'Automjeti që vjen nga e djathta', correct: true }, { id: 'o2', text: 'Automjeti më i shpejtë', correct: false }, { id: 'o3', text: 'Automjeti më i madh', correct: false }] },
+      { id: 'q2', text: 'Në rrethrrotullim me shenjë “Jep përparësi”, përparësi kanë…', image: null, explanation: 'Automjetet që janë tashmë në rrethrrotullim kanë përparësi.', options: [
+        { id: 'o1', text: 'Automjetet brenda rrethrrotullimit', correct: true }, { id: 'o2', text: 'Automjetet që hyjnë', correct: false }] },
+      { id: 'q3', text: 'Te vendkalimi i këmbësorëve pa semafor duhet të…', image: null, explanation: 'Këmbësorët në vendkalim kanë gjithmonë përparësi.', options: [
+        { id: 'o1', text: 'Lini këmbësorët të kalojnë', correct: true }, { id: 'o2', text: 'Bini borisë', correct: false }, { id: 'o3', text: 'Kaloni shpejt para tyre', correct: false }] },
+    ],
+  },
+];
+
+// Public directory used in demo mode (mirrors the live `public_schools` view).
+export function buildDemoDirectory(school) {
+  const base = [
+    { id: 'pub-2', name: 'Auto Akademia Peja', city: 'Pejë', address: 'Rr. Mbretëresha Teutë 8', phone: '+383 44 330 220', cats: ['B'], students: 18, instructors: 2, vehicles: 2 },
+    { id: 'pub-3', name: 'Autoshkolla Prizreni', city: 'Prizren', address: 'Rr. Remzi Ademaj 15', phone: '+383 45 552 100', cats: ['A', 'B'], students: 27, instructors: 3, vehicles: 4 },
+    { id: 'pub-4', name: 'Drive Ferizaj', city: 'Ferizaj', address: 'Rr. Dëshmorët e Kombit 3', phone: '+383 49 410 900', cats: ['B'], students: 9, instructors: 1, vehicles: 1, acceptEnrollments: false },
+    { id: 'pub-5', name: 'Autoshkolla Gjakova', city: 'Gjakovë', address: 'Rr. Nëna Terezë 41', phone: '+383 44 778 452', cats: ['B', 'BE'], students: 23, instructors: 3, vehicles: 3 },
+    { id: 'pub-6', name: 'Auto Mitrovica', city: 'Mitrovicë', address: 'Rr. Mbretëresha Teutë 2', phone: '+383 44 133 009', cats: ['B', 'C'], students: 14, instructors: 2, vehicles: 2 },
+    { id: 'pub-7', name: 'Autoshkolla Gjilani', city: 'Gjilan', address: 'Rr. Adem Jashari 77', phone: '+383 45 902 118', cats: ['B'], students: 16, instructors: 2, vehicles: 2 },
+  ].map(s => ({
+    logo: null, mapsUrl: '', hoursStart: '08:00', hoursEnd: '18:00', workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    acceptEnrollments: true, packages: DEFAULT_PACKAGES, ...s,
+  }));
+  return [{ ...school, students: 12, instructors: 4, vehicles: 4 }, ...base];
+}
+
+// Super-admin demo data (aggregates only — no personal data).
+export function buildDemoPlatform() {
+  const d = (n) => addDays(todayISO(), n);
+  const schools = [
+    { id: 1, name: 'Autoshkolla Dardania', city: 'Prishtinë', bizNumber: '811234567', plan: 'Standard', status: 'active', joined: d(-300), students: 34, activeStudents: 28, instructors: 4, vehicles: 5, lessonsThisMonth: 412, examsThisMonth: 22, examPassRate: 78, mrr: 50, revenueYtd: 14600, cats: ['B', 'C', 'CE'], lastActive: d(0) },
+    { id: 2, name: 'Auto Akademia Peja', city: 'Pejë', bizNumber: '811920043', plan: 'Fillestar', status: 'active', joined: d(-260), students: 18, activeStudents: 12, instructors: 2, vehicles: 2, lessonsThisMonth: 168, examsThisMonth: 9, examPassRate: 67, mrr: 25, revenueYtd: 5400, cats: ['B'], lastActive: d(-1) },
+    { id: 3, name: 'Autoshkolla Prizreni', city: 'Prizren', bizNumber: '810556198', plan: 'Standard', status: 'active', joined: d(-210), students: 27, activeStudents: 21, instructors: 3, vehicles: 4, lessonsThisMonth: 301, examsThisMonth: 15, examPassRate: 73, mrr: 50, revenueYtd: 9800, cats: ['A', 'B'], lastActive: d(0) },
+    { id: 4, name: 'Drive Ferizaj', city: 'Ferizaj', bizNumber: '812044870', plan: 'Fillestar', status: 'trial', joined: d(-20), students: 9, activeStudents: 9, instructors: 1, vehicles: 1, lessonsThisMonth: 74, examsThisMonth: 3, examPassRate: 66, mrr: 0, revenueYtd: 0, cats: ['B'], lastActive: d(0) },
+    { id: 5, name: 'Autoshkolla Gjakova', city: 'Gjakovë', bizNumber: '810778452', plan: 'Premium', status: 'active', joined: d(-150), students: 63, activeStudents: 47, instructors: 8, vehicles: 7, lessonsThisMonth: 648, examsThisMonth: 31, examPassRate: 70, mrr: 90, revenueYtd: 26100, cats: ['B', 'BE', 'C'], lastActive: d(-2) },
+    { id: 6, name: 'Auto Mitrovica', city: 'Mitrovicë', bizNumber: '811330094', plan: 'Fillestar', status: 'suspended', joined: d(-240), students: 14, activeStudents: 0, instructors: 2, vehicles: 2, lessonsThisMonth: 0, examsThisMonth: 0, examPassRate: 61, mrr: 0, revenueYtd: 2200, cats: ['B'], lastActive: d(-60) },
+  ];
+  return { schools, trend: platformTrend(schools) };
+}
+
+export function platformTrend(schools) {
+  const now = new Date();
+  const out = [];
+  for (let k = 5; k >= 0; k--) {
+    const end = new Date(now.getFullYear(), now.getMonth() - k + 1, 1);
+    const inRange = schools.filter(s => new Date(s.joined) < end);
+    out.push({ m: new Date(now.getFullYear(), now.getMonth() - k, 1).getMonth(), schools: inRange.length, mrr: inRange.reduce((a, s) => a + s.mrr, 0) });
+  }
+  return out;
+}

@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { AppProvider, useApp } from './AppContext.jsx';
-import Sidebar, { BottomNav, BOTTOM_NAV_ROLES } from './components/Sidebar.jsx';
-import Topbar from './components/Topbar.jsx';
+import { Sidebar, Topbar, TabBar, MoreSheet, QuickSheet, Banners, Toast } from './components/Shell.jsx';
 import Modal from './components/Modal.jsx';
-import Toast from './components/Toast.jsx';
+import { Icon, LogoMark, Dialog, Field, PasswordInput, Button } from './components/ui.jsx';
+import { useIsMobile } from './hooks/useMediaQuery.js';
+import { canOpen, isStaff } from './lib/nav.js';
+
+import Landing from './pages/Landing.jsx';
+import SchoolPage from './pages/SchoolPage.jsx';
+import Privacy from './pages/Privacy.jsx';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
-import Landing from './pages/Landing.jsx';
 import SuperAdmin from './pages/SuperAdmin.jsx';
-import { useIsMobile } from './hooks/useMediaQuery.js';
-
 import Dashboard from './pages/Dashboard.jsx';
 import InstructorDashboard from './pages/InstructorDashboard.jsx';
 import StudentDashboard from './pages/StudentDashboard.jsx';
@@ -24,78 +27,136 @@ import Courses from './pages/Courses.jsx';
 import Reports from './pages/Reports.jsx';
 import Notifications from './pages/Notifications.jsx';
 import Settings from './pages/Settings.jsx';
+import Profile from './pages/Profile.jsx';
 
-import { C } from './data/seed.js';
+const PAGES = {
+  calendar: Calendar, students: Students, instructors: Instructors, vehicles: Vehicles,
+  packages: Packages, payments: Payments, exams: Exams, courses: Courses, reports: Reports,
+  notifications: Notifications, settings: Settings, profile: Profile,
+};
 
-function RoleDashboard() {
-  const { role } = useApp();
+function Page() {
+  const { route, role } = useApp();
+  if (route !== 'dashboard' && canOpen(role, route) && PAGES[route]) {
+    const P = PAGES[route];
+    return <P />;
+  }
   if (role === 'instructor') return <InstructorDashboard />;
   if (role === 'student') return <StudentDashboard />;
   return <Dashboard />;
 }
 
-function Router() {
-  const { route } = useApp();
-  switch (route) {
-    case 'dashboard':     return <RoleDashboard />;
-    case 'calendar':      return <Calendar />;
-    case 'students':      return <Students />;
-    case 'instructors':   return <Instructors />;
-    case 'vehicles':      return <Vehicles />;
-    case 'packages':      return <Packages />;
-    case 'payments':      return <Payments />;
-    case 'exams':         return <Exams />;
-    case 'courses':       return <Courses />;
-    case 'reports':       return <Reports />;
-    case 'notifications': return <Notifications />;
-    case 'settings':      return <Settings />;
-    default:              return <Dashboard />;
-  }
-}
-
-function AppInner() {
-  const { role } = useApp();
-  const isMobile = useIsMobile();
-  const usesBottomNav = BOTTOM_NAV_ROLES.includes(role);
-  const showBottomNav = isMobile && usesBottomNav;
+function SchoolApp() {
+  const { role, sheet, setSheet, route, selStudent } = useApp();
+  const mobile = useIsMobile(1023);
+  const scrollRef = React.useRef(null);
+  useEffect(() => { scrollRef.current?.scrollTo(0, 0); }, [route, selStudent]);
+  const fab = mobile && isStaff(role) && !selStudent && ['dashboard', 'calendar', 'students', 'payments'].includes(route);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: "'Manrope', sans-serif" }}>
-      {/* Static sidebar on desktop */}
-      <Sidebar />
-      {/* Drawer overlay on mobile (hamburger roles) */}
-      <Sidebar asDrawer />
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: C.bg }}>
-        <Topbar />
-        <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <Router />
-        </div>
-        {showBottomNav && <BottomNav />}
+    <div className="app">
+      {!mobile && <Sidebar />}
+      <div className="app-main">
+        <Banners />
+        <Topbar mobile={mobile} />
+        <main className="app-scroll" ref={scrollRef}><Page /></main>
+        {mobile && <TabBar />}
       </div>
+      {fab && (
+        <button className="fab" onClick={() => setSheet('quick')} aria-label="+"><Icon name="plus" size={26} sw={2.4} /></button>
+      )}
+      {mobile && sheet === 'more' && <MoreSheet />}
+      {mobile && sheet === 'quick' && <QuickSheet />}
       <Modal />
-      <Toast />
+      <Toast withTabbar={mobile} />
     </div>
   );
 }
 
-function Shell() {
-  const { isLoggedIn, portal, authScreen } = useApp();
-  if (!isLoggedIn) {
-    // Pre-auth screens render directly under #root (which is overflow:hidden),
-    // so give them their own scroll container.
-    let screen;
-    if (authScreen === 'signup') screen = <Signup />;
-    else if (authScreen === 'login') screen = <Login />;
-    else screen = <Landing />;
-    return (
-      <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        {screen}
+function RecoveryDialog() {
+  const { T, changePassword, setRecovery } = useApp();
+  const [pw, setPw] = useState('');
+  const [busy, setBusy] = useState(false);
+  return (
+    <Dialog title={T('set_new_password')} onClose={() => setRecovery(false)} footer={
+      <Button variant="primary" loading={busy} disabled={pw.length < 6} onClick={async () => { setBusy(true); await changePassword(pw); setBusy(false); }}>{T('save')}</Button>
+    }>
+      <p className="muted" style={{ marginBottom: 14 }}>{T('set_new_password_sub')}</p>
+      <Field label={T('new_password')} hint={T('min6')}>
+        <PasswordInput value={pw} onChange={e => setPw(e.target.value)} autoComplete="new-password" />
+      </Field>
+    </Dialog>
+  );
+}
+
+function Splash() {
+  return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ display: 'inline-block', animation: 'pulse 1.4s ease infinite' }}><LogoMark size={56} /></div>
       </div>
-    );
+    </div>
+  );
+}
+
+// Android hardware back: close overlays first, then walk back through
+// screens; on the home screen, send the app to the background.
+function useNativeBack() {
+  const ctx = useApp();
+  const ref = React.useRef(ctx);
+  ref.current = ctx;
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let handle;
+    import('@capacitor/app').then(({ App }) => {
+      handle = App.addListener('backButton', ({ canGoBack }) => {
+        const c = ref.current;
+        if (c.modal) return c.setModal(null);
+        if (c.sheet) return c.setSheet(null);
+        if (c.recovery) return c.setRecovery(false);
+        const atHome = c.isLoggedIn ? (c.view.screen === 'app' && c.view.route === 'dashboard') : c.view.screen === 'landing';
+        if (atHome || !canGoBack) return App.minimizeApp();
+        window.history.back();
+      });
+    });
+    return () => { handle?.then?.(h => h.remove()); };
+  }, []);
+}
+
+function Shell() {
+  const { booting, isLoggedIn, portal, view, navigate, recovery } = useApp();
+  useNativeBack();
+
+  // Signed-in users skip the login/signup screens.
+  useEffect(() => {
+    if (isLoggedIn && (view.screen === 'login' || view.screen === 'signup')) navigate({ screen: 'app', route: 'dashboard' }, { replace: true });
+  }, [isLoggedIn, view.screen, navigate]);
+
+  if (booting) return <Splash />;
+
+  // Public screens each get their own scroll container (keyed) so moving
+  // between them starts at the top.
+  const pub = (key, el) => <div className="screen-scroll" key={key}>{el}<Toast /></div>;
+  let screen;
+  if (isLoggedIn && (view.screen === 'app' || view.screen === 'login' || view.screen === 'signup')) {
+    screen = portal === 'superadmin' ? <SuperAdmin /> : <SchoolApp />;
+  } else if (view.screen === 'app' || view.screen === 'login') {
+    screen = pub('login', <Login />);
+  } else if (view.screen === 'signup') {
+    screen = pub('signup', <Signup />);
+  } else if (view.screen === 'privacy') {
+    screen = pub('privacy', <Privacy />);
+  } else if (view.screen === 'school') {
+    screen = pub('school-' + view.schoolId, <SchoolPage />);
+  } else {
+    screen = pub('landing', <Landing />);
   }
-  if (portal === 'superadmin') return <SuperAdmin />;
-  return <AppInner />;
+  return (
+    <>
+      {screen}
+      {recovery && isLoggedIn && <RecoveryDialog />}
+    </>
+  );
 }
 
 export default function App() {

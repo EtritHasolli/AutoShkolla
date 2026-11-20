@@ -1,134 +1,102 @@
 import React, { useState } from 'react';
 import { useApp } from '../AppContext.jsx';
-import { Icon } from '../components/ui.jsx';
-import { C, font } from '../data/seed.js';
-import { supabase } from '../lib/supabase.js';
+import { Button, Field, Input, PasswordInput, Icon, Logo } from '../components/ui.jsx';
+import { LangToggle } from '../components/Shell.jsx';
+import { DemoPicker } from './Landing.jsx';
+
+export function AuthSide() {
+  const { T } = useApp();
+  return (
+    <div className="auth-side">
+      <Logo size={38} light />
+      <div style={{ marginTop: 'auto', position: 'relative', zIndex: 1 }}>
+        <h2 style={{ color: '#fff', fontSize: 34, fontWeight: 800, letterSpacing: '-.035em', maxWidth: 440 }}>{T('auth_side_title')}</h2>
+        <div className="stack" style={{ gap: 12, marginTop: 24 }}>
+          {['auth_side_1', 'auth_side_2', 'auth_side_3'].map(k => (
+            <div key={k} className="row" style={{ gap: 10, fontSize: 15, color: 'rgba(255,255,255,.92)' }}>
+              <span style={{ width: 26, height: 26, borderRadius: 8, background: 'rgba(255,255,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="check" size={15} sw={2.6} /></span>{T(k)}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ marginTop: 40, fontSize: 13, color: 'rgba(255,255,255,.65)', position: 'relative', zIndex: 1 }}>© {new Date().getFullYear()} · Kosovë</div>
+    </div>
+  );
+}
+
+export function AuthTop() {
+  const { T, navigate } = useApp();
+  return (
+    <div className="row" style={{ justifyContent: 'space-between', marginBottom: 28 }}>
+      <button onClick={() => navigate({ screen: 'landing' })} className="btn btn-ghost btn-sm" style={{ marginLeft: -10 }}><Icon name="chevL" size={16} />{T('nav_schools')}</button>
+      <LangToggle />
+    </div>
+  );
+}
 
 export default function Login() {
-  const { authenticate, setAuthScreen, showToast, isLive } = useApp();
+  const { T, authenticate, resetPassword, resendConfirmation, showToast, navigate, hasBackend } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [unconfirmed, setUnconfirmed] = useState(false);
+  const [demo, setDemo] = useState(false);
 
-  async function handleSignIn() {
-    setError('');
-    setUnconfirmed(false);
-    if (!email || !password) {
-      setError('Please enter your email and password.');
-      return;
-    }
+  async function submit(e) {
+    e?.preventDefault();
+    setError(''); setUnconfirmed(false);
+    if (!email.trim() || !password) return setError(T('err_login_fields'));
     setBusy(true);
     const res = await authenticate(email.trim(), password);
     setBusy(false);
-    if (!res.ok) {
-      setError(res.error || 'Invalid email or password.');
-      setUnconfirmed(!!res.unconfirmed);
-    }
+    if (!res.ok) { setError(res.error || T('err_login')); setUnconfirmed(!!res.unconfirmed); }
   }
-
-  async function resendConfirmation() {
-    const { error: err } = await supabase.auth.resend({ type: 'signup', email: email.trim() });
-    showToast(err ? err.message : 'Confirmation email re-sent to ' + email.trim());
+  async function forgot() {
+    if (!email.trim()) return setError(T('enter_email_first'));
+    const r = await resetPassword(email.trim());
+    showToast(r.ok ? T('reset_sent', { email: email.trim() }) : r.error, r.ok ? 'ok' : 'error');
   }
-
-  function handleKey(e) {
-    if (e.key === 'Enter') handleSignIn();
+  async function resend() {
+    const r = await resendConfirmation(email.trim());
+    showToast(r.ok ? T('confirm_resent', { email: email.trim() }) : r.error, r.ok ? 'ok' : 'error');
   }
-
-  const inp = {
-    width: '100%', border: '1px solid ' + C.line, background: '#f9fafb',
-    color: C.ink, fontSize: 14, padding: '11px 14px', borderRadius: 10,
-    outline: 'none', fontFamily: font.body, boxSizing: 'border-box',
-  };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0e1a15 0%,#13251d 55%,#1a3327 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 22, padding: '40px 36px', boxShadow: '0 40px 80px -20px rgba(0,0,0,.55)' }}>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: '#0f9d6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 8px 20px -6px rgba(15,157,107,.6)' }}>
-            <Icon name="car2" size={24} sw={2} />
-          </div>
-          <div>
-            <div style={{ fontFamily: font.disp, fontWeight: 700, fontSize: 22, color: C.ink, letterSpacing: '-.02em' }}>DriveFlow</div>
-            <div style={{ fontSize: 12, color: C.mut, fontWeight: 600, marginTop: -2 }}>Autoshkolla OS</div>
-          </div>
-        </div>
-
-        <div style={{ fontFamily: font.disp, fontSize: 20, fontWeight: 700, color: C.ink, marginBottom: 6 }}>Welcome back</div>
-        <div style={{ fontSize: 13.5, color: C.mut, marginBottom: 24 }}>Sign in to your account</div>
-
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2, marginBottom: 6 }}>Email</div>
-          <input
-            value={email} onChange={e => setEmail(e.target.value)} onKeyDown={handleKey}
-            placeholder="you@autoshkolla.com" style={inp} autoComplete="email"
-          />
-        </div>
-
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.ink2 }}>Password</div>
-            <button className="df-link" onClick={async () => {
-              if (!isLive) { showToast('Password reset link sent (demo)'); return; }
-              if (!email.trim()) { setError('Enter your email first, then tap "Forgot password?".'); return; }
-              const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim());
-              showToast(err ? err.message : 'Password reset link sent to ' + email.trim());
-            }} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 600, fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: font.body }}>
-              Forgot password?
-            </button>
-          </div>
-          <div style={{ position: 'relative' }}>
-            <input
-              type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={handleKey}
-              placeholder="••••••••" style={{ ...inp, paddingRight: 44 }} autoComplete="current-password"
-            />
-            <button className="df-ghost" onClick={() => setShowPass(s => !s)} tabIndex={-1} title={showPass ? 'Hide password' : 'Show password'}
-              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: C.mut, width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <Icon name={showPass ? 'eyeOff' : 'eye'} size={18} sw={1.8} />
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <div style={{ fontSize: 12.5, color: C.red, marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Icon name="alert" size={14} sw={2} /> {error}
-            </div>
-            {unconfirmed && (
-              <button onClick={resendConfirmation} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 700, fontSize: 12.5, cursor: 'pointer', padding: 0, marginTop: 6, fontFamily: font.body }}>
-                Resend confirmation email
-              </button>
+    <div className="auth">
+      <AuthSide />
+      <div className="auth-main">
+        <div className="auth-card">
+          <AuthTop />
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.035em' }}>{T('welcome_back')}</h1>
+          <p className="muted" style={{ marginTop: 4, marginBottom: 24 }}>{T('sign_in_sub')}</p>
+          <form onSubmit={submit}>
+            <Field label={T('email')}><Input type="email" icon="user" value={email} onChange={e => setEmail(e.target.value)} placeholder="ju@autoshkolla.com" autoComplete="email" autoFocus /></Field>
+            <Field label={<span className="row" style={{ justifyContent: 'space-between' }}>{T('password')}<button type="button" className="btn-link" style={{ fontSize: 12.5 }} onClick={forgot}>{T('forgot_password')}</button></span>}>
+              <PasswordInput value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+            </Field>
+            {error && (
+              <div className="field-error" style={{ marginBottom: 12, alignItems: 'flex-start' }}>
+                <Icon name="alert" size={15} sw={2} />
+                <div>{error}{unconfirmed && <div><button type="button" className="btn-link" style={{ fontSize: 12.5, marginTop: 4 }} onClick={resend}>{T('resend_confirm')}</button></div>}</div>
+              </div>
             )}
+            <Button type="submit" variant="primary" size="lg" block loading={busy}>{busy ? T('signing_in') : T('sign_in')}</Button>
+          </form>
+
+          <div className="row" style={{ gap: 10, margin: '22px 0' }}><div style={{ flex: 1, height: 1, background: 'var(--line)' }} /><span className="soft" style={{ fontSize: 12 }}>{T('try_demo').toLowerCase()}</span><div style={{ flex: 1, height: 1, background: 'var(--line)' }} /></div>
+          <Button block icon="sparkle" onClick={() => setDemo(true)}>{T('try_demo')}</Button>
+          {!hasBackend && <p className="soft" style={{ fontSize: 12, marginTop: 8, textAlign: 'center' }}>Demo: {T('password').toLowerCase()} = owner · admin · instructor · student · superadmin</p>}
+
+          <div className="muted" style={{ textAlign: 'center', marginTop: 24, fontSize: 13.5 }}>
+            {T('no_account')} <button className="btn-link" onClick={() => navigate({ screen: 'signup' })}>{T('register_school')}</button>
           </div>
-        )}
-
-        <div style={{ height: error ? 0 : 16 }} />
-
-        <button onClick={handleSignIn} disabled={busy} style={{
-          width: '100%', border: 'none', background: busy ? C.line : '#0f9d6b',
-          color: busy ? C.mut : '#fff', fontSize: 14.5, fontWeight: 700, padding: '13px', borderRadius: 12,
-          cursor: busy ? 'wait' : 'pointer', boxShadow: busy ? 'none' : '0 10px 24px -8px rgba(15,157,107,.55)', fontFamily: font.body,
-        }}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
-
-        <div style={{ textAlign: 'center', fontSize: 13, color: C.mut, marginTop: 20 }}>
-          Don't have an account?{' '}
-          <button className="df-link" onClick={() => setAuthScreen('signup')} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0, fontFamily: font.body }}>
-            Register your school
-          </button>
-        </div>
-        <div style={{ textAlign: 'center', fontSize: 13, color: C.mut, marginTop: 8 }}>
-          Student?{' '}
-          <button className="df-link" onClick={() => setAuthScreen('landing')} style={{ border: 'none', background: 'none', color: C.pri, fontWeight: 700, fontSize: 13, cursor: 'pointer', padding: 0, fontFamily: font.body }}>
-            Browse schools & enroll
-          </button>
+          <div className="muted" style={{ textAlign: 'center', marginTop: 6, fontSize: 13.5 }}>
+            {T('are_student')} <button className="btn-link" onClick={() => navigate({ screen: 'landing' })}>{T('browse_schools')}</button>
+          </div>
         </div>
       </div>
+      {demo && <DemoPicker onClose={() => setDemo(false)} />}
     </div>
   );
 }
